@@ -13,92 +13,128 @@ class ReportsController extends Controller
         $this->render('reports/index');
     }
 
-    public function export(): void
+    public function view(): void
     {
         $type = $_GET['type'] ?? 'accounts';
+        $format = $_GET['format'] ?? 'html';
+        $data = $this->getReportData($type);
+
+        if ($format === 'excel') {
+            $this->exportExcel($type, $data);
+            return;
+        }
+
+        $this->render('reports/view', [
+            'type' => $type,
+            'title' => $data['title'],
+            'headers' => $data['headers'],
+            'rows' => $data['rows'],
+            'isPrint' => ($format === 'pdf')
+        ]);
+    }
+
+    private function getReportData(string $type): array
+    {
         $db = Database::getConnection();
-
-        $filename = $type . '_' . date('Ymd_His') . '.csv';
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment; filename=' . $filename);
-
-        $output = fopen('php://output', 'w');
+        $title = '';
+        $headers = [];
+        $rows = [];
 
         switch ($type) {
             case 'accounts':
-                fputcsv($output, ['ID', 'Nombre', 'Tipo', 'Moneda', 'Balance', 'Proposito', 'Activa']);
-                $rows = $db->query('SELECT * FROM accounts ORDER BY name ASC')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [
-                        $row['id'], $row['name'], $row['type'], $row['currency'],
-                        $row['balance'], $row['purpose'], $row['active']
-                    ]);
+                $title = 'Estado de Cuentas';
+                $headers = ['Nombre', 'Tipo', 'Moneda', 'Balance', 'Propósito', 'Estado'];
+                $data = $db->query('SELECT * FROM accounts ORDER BY name ASC')->fetchAll();
+                foreach ($data as $r) {
+                    $rows[] = [
+                        $r['name'], $r['type'], $r['currency'], 
+                        format_money((float)$r['balance'], $r['currency']),
+                        $r['purpose'], $r['active'] ? 'Activa' : 'Inactiva'
+                    ];
                 }
                 break;
+
             case 'ingresos':
-                fputcsv($output, ['Fecha', 'Cuenta', 'Categoria', 'Concepto', 'Monto', 'Moneda']);
-                $rows = $db->query('
+                $title = 'Reporte de Ingresos';
+                $headers = ['Fecha', 'Cuenta', 'Categoría', 'Concepto', 'Monto'];
+                $data = $db->query('
                     SELECT m.date, a.name as cuenta, m.category, m.concept, m.amount, m.currency
                     FROM movements m
                     JOIN accounts a ON a.id = m.account_origin_id
                     WHERE m.type = "ingreso"
                     ORDER BY m.date DESC
                 ')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [$row['date'], $row['cuenta'], $row['category'], $row['concept'], $row['amount'], $row['currency']]);
+                foreach ($data as $r) {
+                    $rows[] = [$r['date'], $r['cuenta'], $r['category'], $r['concept'], format_money((float)$r['amount'], $r['currency'])];
                 }
                 break;
+
             case 'gastos_personales':
-                fputcsv($output, ['Fecha', 'Cuenta', 'Categoria', 'Concepto', 'Monto', 'Moneda']);
-                $rows = $db->query('
+                $title = 'Gastos Personales';
+                $headers = ['Fecha', 'Cuenta', 'Categoría', 'Concepto', 'Monto'];
+                $data = $db->query('
                     SELECT m.date, a.name as cuenta, m.category, m.concept, m.amount, m.currency
                     FROM movements m
                     JOIN accounts a ON a.id = m.account_origin_id
                     WHERE m.type = "gasto"
                     ORDER BY m.date DESC
                 ')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [$row['date'], $row['cuenta'], $row['category'], $row['concept'], $row['amount'], $row['currency']]);
+                foreach ($data as $r) {
+                    $rows[] = [$r['date'], $r['cuenta'], $r['category'], $r['concept'], format_money((float)$r['amount'], $r['currency'])];
                 }
                 break;
+
             case 'gastos_laborales':
-                fputcsv($output, ['Fecha', 'Cuenta', 'Concepto', 'Monto', 'Proyecto', 'Reembolsado']);
-                $rows = $db->query('
+                $title = 'Gastos Laborales';
+                $headers = ['Fecha', 'Cuenta', 'Concepto', 'Monto', 'Proyecto', 'Estado'];
+                $data = $db->query('
                     SELECT w.date, a.name as cuenta, w.concept, w.amount, w.project, w.reimbursed
                     FROM work_expenses w
                     JOIN accounts a ON a.id = w.account_id
                     ORDER BY w.date DESC
                 ')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [$row['date'], $row['cuenta'], $row['concept'], $row['amount'], $row['project'], $row['reimbursed']]);
+                foreach ($data as $r) {
+                    $rows[] = [
+                        $r['date'], $r['cuenta'], $r['concept'], 
+                        format_money((float)$r['amount'], 'DOP'),
+                        $r['project'], $r['reimbursed'] ? 'Reembolsado' : 'Pendiente'
+                    ];
                 }
                 break;
+
             case 'gastos_fijos':
-                fputcsv($output, ['Nombre', 'Monto', 'Frecuencia', 'Cuenta', 'Activa', 'Nota']);
-                $rows = $db->query('
+                $title = 'Gastos Fijos';
+                $headers = ['Nombre', 'Monto', 'Frecuencia', 'Cuenta', 'Estado'];
+                $data = $db->query('
                     SELECT f.*, a.name as cuenta
                     FROM fixed_expenses f
                     LEFT JOIN accounts a ON a.id = f.account_id
                     ORDER BY f.name ASC
                 ')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [$row['name'], $row['amount'], $row['frequency'], $row['cuenta'], $row['active'], $row['note']]);
+                foreach ($data as $r) {
+                    $rows[] = [$r['name'], format_money((float)$r['amount'], 'DOP'), $r['frequency'], $r['cuenta'], $r['active'] ? 'Activo' : 'Inactivo'];
                 }
                 break;
+
             case 'financiamientos':
-                fputcsv($output, ['Nombre', 'Cuota', 'Frecuencia', 'Total pagos', 'Pagos realizados', 'Estado', 'Total pagado', 'Total pendiente', 'Proxima fecha']);
-                $rows = $db->query('SELECT * FROM financings ORDER BY name ASC')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [
-                        $row['name'], $row['installment_amount'], $row['frequency'],
-                        $row['total_payments'], $row['payments_made'], $row['status'],
-                        $row['total_paid'], $row['total_pending'], $row['next_date']
-                    ]);
+                $title = 'Estado de Financiamientos';
+                $headers = ['Nombre', 'Cuota', 'Pagos', 'Pagado', 'Pendiente', 'Estado'];
+                $data = $db->query('SELECT * FROM financings ORDER BY name ASC')->fetchAll();
+                foreach ($data as $r) {
+                    $rows[] = [
+                        $r['name'], format_money((float)$r['installment_amount'], 'DOP'),
+                        $r['payments_made'] . ' / ' . $r['total_payments'],
+                        format_money((float)$r['total_paid'], 'DOP'),
+                        format_money((float)$r['total_pending'], 'DOP'),
+                        ucfirst((string)$r['status'])
+                    ];
                 }
                 break;
+
             case 'resumen_mensual':
-                fputcsv($output, ['Mes', 'Ingresos', 'Gastos', 'Gastos laborales']);
-                $rows = $db->query('
+                $title = 'Resumen Mensual de Flujo';
+                $headers = ['Mes', 'Ingresos', 'Gastos Personales', 'Gastos Laborales'];
+                $data = $db->query('
                     SELECT strftime("%Y-%m", date) as mes,
                            SUM(CASE WHEN type = "ingreso" THEN amount ELSE 0 END) as ingresos,
                            SUM(CASE WHEN type = "gasto" THEN amount ELSE 0 END) as gastos,
@@ -107,15 +143,39 @@ class ReportsController extends Controller
                     GROUP BY strftime("%Y-%m", date)
                     ORDER BY mes DESC
                 ')->fetchAll();
-                foreach ($rows as $row) {
-                    fputcsv($output, [$row['mes'], $row['ingresos'], $row['gastos'], $row['gastos_laborales']]);
+                foreach ($data as $r) {
+                    $rows[] = [
+                        $r['mes'], 
+                        format_money((float)$r['ingresos'], 'DOP'),
+                        format_money((float)$r['gastos'], 'DOP'),
+                        format_money((float)$r['gastos_laborales'], 'DOP')
+                    ];
                 }
                 break;
-            default:
-                fputcsv($output, ['Reporte no soportado']);
         }
 
-        fclose($output);
+        return ['title' => $title, 'headers' => $headers, 'rows' => $rows];
+    }
+
+    private function exportExcel(string $type, array $data): void
+    {
+        $filename = $type . '_' . date('Ymd_His') . '.xls';
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body>';
+        echo '<h2>' . e($data['title']) . '</h2>';
+        echo '<table border="1">';
+        echo '<tr>';
+        foreach ($data['headers'] as $h) echo '<th style="background-color: #0f172a; color: white;">' . e($h) . '</th>';
+        echo '</tr>';
+        foreach ($data['rows'] as $row) {
+            echo '<tr>';
+            foreach ($row as $cell) echo '<td>' . e((string)$cell) . '</td>';
+            echo '</tr>';
+        }
+        echo '</table></body></html>';
         exit;
     }
 }

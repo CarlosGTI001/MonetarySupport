@@ -1,6 +1,6 @@
 <div class="mb-5">
     <h3 class="fw-bold mb-1">Centro de Reportes</h3>
-    <p class="text-muted mb-0 small">Exporta y analiza tus datos financieros en formatos compatibles.</p>
+    <p class="text-muted mb-0 small">Exporta y analiza tus datos financieros en formatos profesionales.</p>
 </div>
 
 <div class="row g-4">
@@ -26,13 +26,31 @@
                     </div>
                     <div>
                         <h5 class="fw-bold mb-0 text-dark"><?= $r['title'] ?></h5>
-                        <span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.6rem;">Formato CSV</span>
+                        <div class="d-flex gap-1 mt-1">
+                            <span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.55rem;">PDF</span>
+                            <span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.55rem;">Excel</span>
+                        </div>
                     </div>
                 </div>
                 <p class="text-muted small mb-4"><?= $r['desc'] ?></p>
-                <a href="?module=reports&action=export&type=<?= $r['type'] ?>" class="btn btn-outline-<?= $r['color'] ?> w-100 fw-bold rounded-pill d-flex align-items-center justify-content-center">
-                    <i class="bi bi-download me-2"></i> Exportar Datos
-                </a>
+                
+                <div class="d-grid gap-2">
+                    <a href="?module=reports&action=view&type=<?= $r['type'] ?>&format=html" class="btn btn-primary fw-bold rounded-pill shadow-sm">
+                        <i class="bi bi-eye me-2"></i> Vista Previa
+                    </a>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="?module=reports&action=view&type=<?= $r['type'] ?>&format=pdf" class="btn btn-outline-dark btn-sm w-100 fw-bold rounded-pill">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="?module=reports&action=view&type=<?= $r['type'] ?>&format=excel" class="btn btn-outline-success btn-sm w-100 fw-bold rounded-pill">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
