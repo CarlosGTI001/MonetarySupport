@@ -2,7 +2,7 @@
 $isEdit = !empty($item);
 ?>
 <h3><?= $isEdit ? 'Editar regla' : 'Nueva regla' ?></h3>
-<form method="post" action="?module=savings&action=<?= $isEdit ? 'update' : 'store' ?>">
+<form method="post" action="?module=savings&action=<?= $isEdit ? 'save' : 'store' ?>">
     <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
     <?php endif; ?>

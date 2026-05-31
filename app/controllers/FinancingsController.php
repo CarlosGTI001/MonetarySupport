@@ -32,7 +32,7 @@ class FinancingsController extends Controller
         $this->render('financings/form', ['item' => $item]);
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         Financing::update($id, $this->sanitize($_POST));

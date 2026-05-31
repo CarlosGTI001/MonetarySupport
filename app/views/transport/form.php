@@ -2,7 +2,7 @@
 $isEdit = !empty($item);
 ?>
 <h3><?= $isEdit ? 'Editar item transporte' : 'Nuevo item transporte' ?></h3>
-<form method="post" action="?module=transport&action=<?= $isEdit ? 'update' : 'store' ?>">
+<form method="post" action="?module=transport&action=<?= $isEdit ? 'save' : 'store' ?>">
     <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
     <?php endif; ?>

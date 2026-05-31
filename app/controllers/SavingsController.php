@@ -39,7 +39,7 @@ class SavingsController extends Controller
         $this->render('savings/form', ['item' => $item, 'accounts' => $accounts]);
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         SavingsRule::update($id, $this->sanitize($_POST));

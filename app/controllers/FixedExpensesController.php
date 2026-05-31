@@ -35,7 +35,7 @@ class FixedExpensesController extends Controller
         $this->render('fixed_expenses/form', ['item' => $item, 'accounts' => $accounts]);
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         FixedExpense::update($id, $this->sanitize($_POST));

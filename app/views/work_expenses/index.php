@@ -74,7 +74,12 @@
                             <?php if ($isReimbursed): ?>
                                 <span class="badge bg-success-subtle text-success rounded-pill px-3">REEMBOLSADO</span>
                             <?php else: ?>
-                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3">PENDIENTE</span>
+                                <form method="post" action="?module=work_expenses&action=markAsReimbursed">
+                                    <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
+                                    <button class="btn btn-sm btn-warning fw-bold rounded-pill px-3 shadow-sm" type="submit">
+                                        <i class="bi bi-check-circle-fill me-1"></i> COBRADO
+                                    </button>
+                                </form>
                             <?php endif; ?>
                         </td>
                         <td class="pe-4 py-3 text-end">

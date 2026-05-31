@@ -32,7 +32,7 @@ class AccountsController extends Controller
         $this->render('accounts/form', ['account' => $account]);
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         Account::update($id, $this->sanitize($_POST));

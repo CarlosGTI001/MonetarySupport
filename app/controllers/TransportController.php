@@ -46,7 +46,7 @@ class TransportController extends Controller
         $this->render('transport/form', ['item' => $item]);
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         TransportItem::update($id, $this->sanitize($_POST));

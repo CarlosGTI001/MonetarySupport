@@ -2,7 +2,7 @@
 $isEdit = !empty($item);
 ?>
 <h3><?= $isEdit ? 'Editar gasto fijo' : 'Nuevo gasto fijo' ?></h3>
-<form method="post" action="?module=fixed_expenses&action=<?= $isEdit ? 'update' : 'store' ?>">
+<form method="post" action="?module=fixed_expenses&action=<?= $isEdit ? 'save' : 'store' ?>">
     <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= (int)$item['id'] ?>">
     <?php endif; ?>

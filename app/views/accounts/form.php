@@ -2,7 +2,7 @@
 $isEdit = !empty($account);
 ?>
 <h3><?= $isEdit ? 'Editar cuenta' : 'Nueva cuenta' ?></h3>
-<form method="post" action="?module=accounts&action=<?= $isEdit ? 'update' : 'store' ?>">
+<form method="post" action="?module=accounts&action=<?= $isEdit ? 'save' : 'store' ?>">
     <?php if ($isEdit): ?>
         <input type="hidden" name="id" value="<?= (int)$account['id'] ?>">
     <?php endif; ?>
