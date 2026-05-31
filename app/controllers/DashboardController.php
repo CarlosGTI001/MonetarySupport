@@ -67,6 +67,23 @@ class DashboardController extends Controller
 
         $projection = $spendableDop - $upcomingTotal - $transportQuincenal;
 
+        // Analytics: Last 6 months cash flow
+        $cashFlow = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $m = date('Y-m', strtotime("-$i months"));
+            $label = date('M', strtotime("-$i months"));
+            
+            $stmt = $db->prepare('SELECT SUM(amount) FROM movements WHERE type="ingreso" AND strftime("%Y-%m", date) = :m');
+            $stmt->execute(['m' => $m]);
+            $income = (float)$stmt->fetchColumn();
+            
+            $stmt = $db->prepare('SELECT SUM(amount) FROM movements WHERE type IN ("gasto", "gasto_laboral") AND strftime("%Y-%m", date) = :m');
+            $stmt->execute(['m' => $m]);
+            $expense = (float)$stmt->fetchColumn();
+            
+            $cashFlow[] = ['month' => $label, 'income' => $income, 'expense' => $expense];
+        }
+
         $this->render('dashboard/index', [
             'accounts' => $accounts,
             'totals' => $totals,
@@ -84,6 +101,7 @@ class DashboardController extends Controller
             'totalDop' => $totalDop,
             'totalUsd' => $totalUsd,
             'expensesByCategory' => $expensesByCategory,
+            'cashFlow' => $cashFlow
         ]);
     }
 }
