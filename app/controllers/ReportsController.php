@@ -215,13 +215,40 @@ class ReportsController extends Controller
     {
         require_once __DIR__ . '/../core/libs/SimpleXLSXGen.php';
         
+        $colCount = count($data['headers']);
+        $lastCol = \Shuchkin\SimpleXLSXGen::coord2cell($colCount - 1);
+        
         $xlsxData = [];
-        $xlsxData[] = $data['headers'];
+        // Branding Header
+        $xlsxData[] = ["<style bold center>MONETARY SUPPORT</style>"];
+        $xlsxData[] = ["<style bold center>" . mb_strtoupper(utf8_decode($data['title'])) . "</style>"];
+        $xlsxData[] = ["Generado el: " . date('d/m/Y H:i')];
+        $xlsxData[] = [""]; // Spacer
+        
+        // Table Headers
+        $styledHeaders = [];
+        foreach ($data['headers'] as $h) {
+            $styledHeaders[] = "<style bold fill-dark center>" . mb_strtoupper(utf8_decode($h)) . "</style>";
+        }
+        $xlsxData[] = $styledHeaders;
+
+        // Data Rows
         foreach ($data['rows'] as $row) {
             $xlsxData[] = $row;
         }
 
         $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($xlsxData);
+        
+        // Apply "Template" settings
+        $xlsx->mergeCells("A1:{$lastCol}1");
+        $xlsx->mergeCells("A2:{$lastCol}2");
+        $xlsx->mergeCells("A3:{$lastCol}3");
+        
+        // Auto-size columns (approximate)
+        for ($i = 0; $i < $colCount; $i++) {
+            $xlsx->setColWidth($i, 20);
+        }
+
         $xlsx->downloadAs($type . '_' . date('Ymd_His') . '.xlsx');
         exit;
     }

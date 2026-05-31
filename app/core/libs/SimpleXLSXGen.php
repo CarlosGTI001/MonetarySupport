@@ -523,6 +523,18 @@ class SimpleXLSXGen
         $cdrec .= $e['comments'];
     }
 
+    public function mergeCells($range)
+    {
+        $this->sheets[$this->curSheet]['mergecells'][] = $range;
+        return $this;
+    }
+
+    public function setColWidth($col, $width)
+    {
+        $this->sheets[$this->curSheet]['colwidth'][$col] = $width;
+        return $this;
+    }
+
     protected function _sheetToXML($idx, $template)
     {
         $ROWS = [];
@@ -540,6 +552,36 @@ class SimpleXLSXGen
                     continue;
                 }
                 $ct = $cv = $cs = null;
+
+                // Basic style parsing if string starts with <style
+                if (is_string($v) && strpos($v, '<style') === 0) {
+                    if (preg_match('/<style\s+([^>]+)>(.*)<\/style>/si', $v, $m)) {
+                        $style_str = $m[1];
+                        $v = $m[2];
+                        
+                        $nf = self::N_NORMAL;
+                        $align = self::A_DEFAULT;
+                        $font = self::F_NORMAL;
+                        $fill = self::FL_NONE;
+                        $fcolor = 0;
+                        $bgcolor = 0;
+                        $border = '';
+                        $fsize = 0;
+
+                        if (strpos($style_str, 'bold') !== false) $font |= self::F_BOLD;
+                        if (strpos($style_str, 'center') !== false) $align |= self::A_CENTER;
+                        if (strpos($style_str, 'right') !== false) $align |= self::A_RIGHT;
+                        if (strpos($style_str, 'fill-dark') !== false) $fill |= self::FL_SOLID;
+
+                        $xf_key = "$nf-$align-$font-$fill-$fcolor-$bgcolor-$border-$fsize";
+                        if (!isset($this->XF_KEYS[$xf_key])) {
+                            $this->XF_KEYS[$xf_key] = count($this->XF);
+                            $this->XF[] = [$nf, $align, $font, $fill, $fcolor, $bgcolor, $border, $fsize];
+                        }
+                        $cs = $this->XF_KEYS[$xf_key];
+                    }
+                }
+
                 if (is_numeric($v)) {
                     $cv = $v;
                 } else {
@@ -554,13 +596,32 @@ class SimpleXLSXGen
                         $this->SI_KEYS[$skey] = $cv;
                     }
                 }
-                $row .= '<c r="' . $cname . '"' . ($ct ? ' t="' . $ct . '"' : '') . ($cs ? ' s="' . $cs . '"' : '') . '><v>' . $cv . '</v></c>';
+                $row .= '<c r="' . $cname . '"' . ($ct ? ' t="' . $ct . '"' : '') . ($cs !== null ? ' s="' . $cs . '"' : '') . '><v>' . $cv . '</v></c>';
             }
             $ROWS[] = '<row r="' . $CUR_ROW . '">' . $row . "</row>";
         }
         $ROWS[] = '</sheetData>';
+
+        $COLS = '';
+        if (!empty($this->sheets[$idx]['colwidth'])) {
+            $COLS = '<cols>';
+            foreach ($this->sheets[$idx]['colwidth'] as $c => $w) {
+                $COLS .= '<col min="' . ($c + 1) . '" max="' . ($c + 1) . '" width="' . $w . '" customWidth="1" />';
+            }
+            $COLS .= '</cols>';
+        }
+
+        $MERGE = '';
+        if (!empty($this->sheets[$idx]['mergecells'])) {
+            $MERGE = '<mergeCells count="' . count($this->sheets[$idx]['mergecells']) . '">';
+            foreach ($this->sheets[$idx]['mergecells'] as $m) {
+                $MERGE .= '<mergeCell ref="' . $m . '" />';
+            }
+            $MERGE .= '</mergeCells>';
+        }
+
         $REF = 'A1:' . self::coord2cell(count($this->sheets[$idx]['rows'][0] ?? [])-1) . $CUR_ROW;
-        return str_replace(['{REF}', '{ROWS}', '{SHEETVIEWS}', '{COLS}', '{AUTOFILTER}', '{MERGECELLS}', '{HYPERLINKS}', '{VML}'], [$REF, implode("\r\n", $ROWS), '', '', '', '', '', ''], $template);
+        return str_replace(['{REF}', '{ROWS}', '{SHEETVIEWS}', '{COLS}', '{AUTOFILTER}', '{MERGECELLS}', '{HYPERLINKS}', '{VML}'], [$REF, implode("\r\n", $ROWS), '', $COLS, '', $MERGE, '', ''], $template);
     }
 
     public function setTitle($title) { $this->title = $title; return $this; }
