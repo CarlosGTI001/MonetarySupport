@@ -220,6 +220,7 @@ class MovementsController extends Controller
             'fixed_expense_id' => !empty($data['fixed_expense_id']) ? (int)$data['fixed_expense_id'] : null,
             'financing_id' => !empty($data['financing_id']) ? (int)$data['financing_id'] : null,
             'apply_dgii_tax' => !empty($data['apply_dgii_tax']) ? 1 : 0,
+            'exchange_rate' => !empty($data['exchange_rate']) ? (float)$data['exchange_rate'] : null,
         ];
     }
 

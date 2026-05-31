@@ -38,10 +38,10 @@ class Movement
         try {
             $stmt = $db->prepare('
                 INSERT INTO movements (
-                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, financing_id, apply_dgii_tax, type, category, concept, amount, currency,
+                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, financing_id, apply_dgii_tax, exchange_rate, type, category, concept, amount, currency,
                     reimbursable, reimbursed, note
                 ) VALUES (
-                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :financing_id, :apply_dgii_tax, :type, :category, :concept, :amount, :currency,
+                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :financing_id, :apply_dgii_tax, :exchange_rate, :type, :category, :concept, :amount, :currency,
                     :reimbursable, :reimbursed, :note
                 )
             ');
@@ -53,6 +53,7 @@ class Movement
                 'savings_rule_id' => $data['savings_rule_id'],
                 'financing_id' => $data['financing_id'] ?? null,
                 'apply_dgii_tax' => $data['apply_dgii_tax'] ?? 0,
+                'exchange_rate' => $data['exchange_rate'] ?? null,
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],
@@ -245,11 +246,12 @@ class Movement
         $type = $movement['type'];
         $movCurrency = $movement['currency'];
         $applyTax = (bool)($movement['apply_dgii_tax'] ?? false);
+        $customRate = !empty($movement['exchange_rate']) ? (float)$movement['exchange_rate'] : null;
 
         // Origin balance adjustment
         $originAdjAmount = $amount;
         if ($movCurrency !== $originAccount['currency']) {
-            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency']);
+            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
         }
 
         if ($type === 'ingreso') {
@@ -275,7 +277,7 @@ class Movement
             if ($destAccount) {
                 $destAdjAmount = $amount;
                 if ($movCurrency !== $destAccount['currency']) {
-                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency']);
+                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
                 }
                 Account::adjustBalance((int)$destAccount['id'], -$destAdjAmount);
             }
@@ -296,11 +298,12 @@ class Movement
         $type = $data['type'];
         $movCurrency = $data['currency'];
         $applyTax = (bool)($data['apply_dgii_tax'] ?? false);
+        $customRate = !empty($data['exchange_rate']) ? (float)$data['exchange_rate'] : null;
 
         // Origin balance adjustment
         $originAdjAmount = $amount;
         if ($movCurrency !== $originAccount['currency']) {
-            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency']);
+            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
         }
 
         if ($type === 'ingreso') {
@@ -326,7 +329,7 @@ class Movement
             if ($destAccount) {
                 $destAdjAmount = $amount;
                 if ($movCurrency !== $destAccount['currency']) {
-                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency']);
+                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
                 }
                 Account::adjustBalance((int)$destAccount['id'], $destAdjAmount);
             }

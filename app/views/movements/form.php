@@ -107,14 +107,18 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
                             <div class="d-flex align-items-center mb-3">
                                 <i class="bi bi-calculator fs-5 me-2 text-primary"></i>
                                 <h6 class="fw-bold mb-0 text-primary">Calculadora de Conversión</h6>
-                                <span class="badge bg-white text-primary border ms-auto">1 USD = <?= number_format(get_exchange_rate(), 2) ?> DOP</span>
+                                <div class="input-group input-group-sm ms-auto" style="width: 150px;">
+                                    <span class="input-group-text bg-white">1 USD =</span>
+                                    <input type="number" step="0.01" id="customExchangeRate" class="form-control text-end fw-bold" value="<?= number_format(get_exchange_rate(), 2, '.', '') ?>">
+                                </div>
                             </div>
                             <div class="row g-3">
                                 <div class="col-12 col-md-5">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-white fw-bold" id="calcSourceLabel">DOP</span>
-                                        <input type="number" step="0.01" id="calcSourceAmount" class="form-control" placeholder="Monto a enviar">
+                                        <input type="number" step="0.01" id="calcSourceAmount" class="form-control" placeholder="Monto origen">
                                     </div>
+                                    <div class="x-small text-muted mt-1">Lo que sale de la cuenta</div>
                                 </div>
                                 <div class="col-12 col-md-2 text-center align-self-center">
                                     <i class="bi bi-arrow-left-right text-muted"></i>
@@ -122,12 +126,14 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
                                 <div class="col-12 col-md-5">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-white fw-bold" id="calcTargetLabel">USD</span>
-                                        <input type="number" step="0.01" id="calcTargetAmount" class="form-control" placeholder="Monto a recibir">
+                                        <input type="number" step="0.01" id="calcTargetAmount" class="form-control" placeholder="Monto destino">
                                     </div>
+                                    <div class="x-small text-muted mt-1">Lo que llega / valor real</div>
                                 </div>
                                 <div class="col-12 mt-2">
+                                    <input type="hidden" name="exchange_rate" id="finalExchangeRate" value="">
                                     <button type="button" id="applyCalcAmount" class="btn btn-sm btn-primary w-100 fw-bold">
-                                        USAR ESTE MONTO EN EL FORMULARIO
+                                        USAR ESTOS VALORES EN EL FORMULARIO
                                     </button>
                                 </div>
                             </div>
@@ -432,21 +438,34 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
     const srcInput = document.getElementById('calcSourceAmount');
     const targetInput = document.getElementById('calcTargetAmount');
     const mainAmountInput = document.querySelector('[name="amount"]');
+    const customRateInput = document.getElementById('customExchangeRate');
+    const finalRateInput = document.getElementById('finalExchangeRate');
+
+    const getRate = () => parseFloat(customRateInput.value) || exchangeRate;
 
     srcInput.addEventListener('input', () => {
+        const rate = getRate();
         const srcCur = document.getElementById('calcSourceLabel').textContent;
         const tarCur = document.getElementById('calcTargetLabel').textContent;
-        if (srcCur === 'DOP' && tarCur === 'USD') targetInput.value = (srcInput.value / exchangeRate).toFixed(2);
-        else if (srcCur === 'USD' && tarCur === 'DOP') targetInput.value = (srcInput.value * exchangeRate).toFixed(2);
+        if (srcCur === 'DOP' && tarCur === 'USD') targetInput.value = (srcInput.value / rate).toFixed(2);
+        else if (srcCur === 'USD' && tarCur === 'DOP') targetInput.value = (srcInput.value * rate).toFixed(2);
         else targetInput.value = srcInput.value;
     });
 
     targetInput.addEventListener('input', () => {
+        const rate = getRate();
         const srcCur = document.getElementById('calcSourceLabel').textContent;
         const tarCur = document.getElementById('calcTargetLabel').textContent;
-        if (tarCur === 'DOP' && srcCur === 'USD') srcInput.value = (targetInput.value / exchangeRate).toFixed(2);
-        else if (tarCur === 'USD' && srcCur === 'DOP') srcInput.value = (targetInput.value * exchangeRate).toFixed(2);
+        if (tarCur === 'DOP' && srcCur === 'USD') srcInput.value = (targetInput.value / rate).toFixed(2);
+        else if (tarCur === 'USD' && srcCur === 'DOP') srcInput.value = (targetInput.value * rate).toFixed(2);
         else srcInput.value = targetInput.value;
+    });
+
+    customRateInput.addEventListener('input', () => {
+        // Trigger recalculation based on which input was last active. We'll default to recalculating target based on source.
+        if (srcInput.value) {
+            srcInput.dispatchEvent(new Event('input'));
+        }
     });
 
     document.getElementById('applyCalcAmount').addEventListener('click', () => {
@@ -458,6 +477,7 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
         if (movCurrency === tarCur) mainAmountInput.value = targetInput.value;
         else mainAmountInput.value = srcInput.value;
         
+        finalRateInput.value = getRate();
         mainAmountInput.dispatchEvent(new Event('input'));
     });
 

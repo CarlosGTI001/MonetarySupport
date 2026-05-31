@@ -33,11 +33,12 @@ function get_exchange_rate(): float
     return 60.00;
 }
 
-function convert_currency(float $amount, string $from, string $to): float
+function convert_currency(float $amount, string $from, string $to, ?float $customRate = null): float
 {
     if ($from === $to) return $amount;
     
-    $rate = get_exchange_rate();
+    $rate = $customRate !== null && $customRate > 0 ? $customRate : get_exchange_rate();
+    
     if ($from === 'USD' && $to === 'DOP') {
         return $amount * $rate;
     }

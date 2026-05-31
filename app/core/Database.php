@@ -53,6 +53,7 @@ class Database
         self::ensureColumn($pdo, 'movements', 'savings_rule_id', 'INTEGER');
         self::ensureColumn($pdo, 'movements', 'financing_id', 'INTEGER');
         self::ensureColumn($pdo, 'movements', 'apply_dgii_tax', 'INTEGER DEFAULT 0');
+        self::ensureColumn($pdo, 'movements', 'exchange_rate', 'REAL');
         self::ensureColumn($pdo, 'fixed_expenses', 'currency', "TEXT DEFAULT 'DOP'");
         self::ensureColumn($pdo, 'financings', 'currency', "TEXT DEFAULT 'DOP'");
         self::ensureColumn($pdo, 'savings_rules', 'frequency', "TEXT DEFAULT 'per_income'");
