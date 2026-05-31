@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS movements (
     date TEXT NOT NULL,
     account_origin_id INTEGER NOT NULL,
     account_dest_id INTEGER,
+    fixed_expense_id INTEGER,
+    savings_rule_id INTEGER,
     type TEXT NOT NULL,
     category TEXT,
     concept TEXT,
@@ -25,7 +27,9 @@ CREATE TABLE IF NOT EXISTS movements (
     note TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY(account_origin_id) REFERENCES accounts(id),
-    FOREIGN KEY(account_dest_id) REFERENCES accounts(id)
+    FOREIGN KEY(account_dest_id) REFERENCES accounts(id),
+    FOREIGN KEY(fixed_expense_id) REFERENCES fixed_expenses(id),
+    FOREIGN KEY(savings_rule_id) REFERENCES savings_rules(id)
 );
 
 CREATE TABLE IF NOT EXISTS fixed_expenses (
@@ -83,6 +87,7 @@ CREATE TABLE IF NOT EXISTS savings_rules (
     mode TEXT NOT NULL,
     percent REAL,
     amount REAL,
+    frequency TEXT DEFAULT 'per_income',
     target_account_id INTEGER,
     priority INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1,

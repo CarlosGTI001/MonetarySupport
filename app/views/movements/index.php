@@ -6,6 +6,8 @@
     </div>
 </div>
 
+<?php $pendingFixedExpenses = $pendingFixedExpenses ?? []; ?>
+
 <?php if (!empty($incomeSuggestion)): ?>
     <div class="alert alert-info">
         <h5>Sugerencia de distribucion (ingreso <?= format_money($incomeSuggestion['total'], 'DOP') ?>)</h5>
@@ -28,6 +30,47 @@
                         <div><?= e($name) ?>: <?= format_money($value, 'DOP') ?></div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($pendingFixedExpenses)): ?>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Gastos fijos pendientes</h5>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                    <tr>
+                        <th>Gasto fijo</th>
+                        <th>Periodo</th>
+                        <th>Cuenta</th>
+                        <th class="text-end">Monto</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($pendingFixedExpenses as $item): ?>
+                        <tr>
+                            <td><?= e($item['name']) ?></td>
+                            <td><?= e($item['period_label']) ?></td>
+                            <td><?= e($item['account_name'] ?? 'Sin cuenta') ?></td>
+                            <td class="text-end"><?= format_money((float)$item['amount'], $item['account_currency'] ?? 'DOP') ?></td>
+                            <td class="text-end">
+                                <?php if (!empty($item['account_id'])): ?>
+                                    <form method="post" action="?module=movements&action=applyFixed" class="d-inline">
+                                        <input type="hidden" name="fixed_expense_id" value="<?= (int)$item['id'] ?>">
+                                        <button class="btn btn-sm btn-primary" type="submit">Aplicar</button>
+                                    </form>
+                                <?php else: ?>
+                                    <a class="btn btn-sm btn-outline-primary" href="?module=movements&action=create&fixed_expense_id=<?= (int)$item['id'] ?>">Completar</a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

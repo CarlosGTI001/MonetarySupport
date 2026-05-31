@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Account;
+use App\Models\FixedExpense;
 use App\Models\Movement;
 use App\Models\SavingsRule;
 
@@ -15,6 +16,7 @@ class MovementsController extends Controller
         $movements = Movement::all();
         $accounts = Account::all();
         $incomeSuggestion = null;
+        $pendingFixedExpenses = FixedExpense::pendingForCurrentPeriod();
 
         if (!empty($_GET['income_id'])) {
             $movement = Movement::find((int)$_GET['income_id']);
@@ -27,15 +29,75 @@ class MovementsController extends Controller
             'movements' => $movements,
             'accounts' => $accounts,
             'incomeSuggestion' => $incomeSuggestion,
+            'pendingFixedExpenses' => $pendingFixedExpenses,
         ]);
     }
 
     public function create(): void
     {
         $accounts = Account::all();
+        $fixedExpenses = FixedExpense::active();
+        $savingsRules = SavingsRule::fixedActive();
+        $movement = null;
+
+        if (!empty($_GET['fixed_expense_id'])) {
+            $fixedExpense = FixedExpense::find((int)$_GET['fixed_expense_id']);
+            if ($fixedExpense) {
+                $currency = 'DOP';
+                if (!empty($fixedExpense['account_id'])) {
+                    $account = Account::find((int)$fixedExpense['account_id']);
+                    if (!empty($account['currency'])) {
+                        $currency = $account['currency'];
+                    }
+                }
+                $movement = [
+                    'date' => current_date(),
+                    'account_origin_id' => $fixedExpense['account_id'] ?? null,
+                    'account_dest_id' => null,
+                    'type' => 'gasto',
+                    'category' => 'Gasto fijo',
+                    'concept' => $fixedExpense['name'],
+                    'amount' => $fixedExpense['amount'],
+                    'currency' => $currency,
+                    'reimbursable' => 0,
+                    'reimbursed' => 0,
+                    'note' => $fixedExpense['note'] ?? '',
+                    'fixed_expense_id' => (int)$fixedExpense['id'],
+                ];
+            }
+        }
+
+        if (!empty($_GET['savings_rule_id'])) {
+            $rule = SavingsRule::find((int)$_GET['savings_rule_id']);
+            if ($rule && $rule['mode'] === 'fixed') {
+                $currency = 'DOP';
+                if (!empty($rule['target_account_id'])) {
+                    $account = Account::find((int)$rule['target_account_id']);
+                    if (!empty($account['currency'])) {
+                        $currency = $account['currency'];
+                    }
+                }
+                $movement = [
+                    'date' => current_date(),
+                    'account_origin_id' => null,
+                    'account_dest_id' => $rule['target_account_id'] ?? null,
+                    'type' => 'transferencia',
+                    'category' => 'Ahorro',
+                    'concept' => $rule['name'],
+                    'amount' => $rule['amount'] ?? 0,
+                    'currency' => $currency,
+                    'reimbursable' => 0,
+                    'reimbursed' => 0,
+                    'note' => $rule['note'] ?? '',
+                    'savings_rule_id' => (int)$rule['id'],
+                ];
+            }
+        }
         $this->render('movements/form', [
-            'movement' => null,
+            'movement' => $movement,
             'accounts' => $accounts,
+            'fixedExpenses' => $fixedExpenses,
+            'savingsRules' => $savingsRules,
         ]);
     }
 
@@ -54,10 +116,51 @@ class MovementsController extends Controller
         $id = (int)($_GET['id'] ?? 0);
         $movement = Movement::find($id);
         $accounts = Account::all();
+        $fixedExpenses = FixedExpense::active();
+        $savingsRules = SavingsRule::fixedActive();
         $this->render('movements/form', [
             'movement' => $movement,
             'accounts' => $accounts,
+            'fixedExpenses' => $fixedExpenses,
+            'savingsRules' => $savingsRules,
         ]);
+    }
+
+    public function applyFixed(): void
+    {
+        $id = (int)($_POST['fixed_expense_id'] ?? 0);
+        $fixedExpense = $id ? FixedExpense::find($id) : null;
+        if (!$fixedExpense || empty($fixedExpense['active'])) {
+            redirect('?module=movements');
+        }
+
+        $pending = FixedExpense::pendingForCurrentPeriod();
+        $pendingIds = array_map(static fn ($item) => (int)$item['id'], $pending);
+        if (!in_array((int)$fixedExpense['id'], $pendingIds, true)) {
+            redirect('?module=movements');
+        }
+
+        if (empty($fixedExpense['account_id'])) {
+            redirect('?module=movements&action=create&fixed_expense_id=' . (int)$fixedExpense['id']);
+        }
+
+        $account = Account::find((int)$fixedExpense['account_id']);
+        $movement = [
+            'date' => current_date(),
+            'account_origin_id' => (int)$fixedExpense['account_id'],
+            'account_dest_id' => null,
+            'type' => 'gasto',
+            'category' => 'Gasto fijo',
+            'concept' => $fixedExpense['name'],
+            'amount' => (float)$fixedExpense['amount'],
+            'currency' => $account['currency'] ?? 'DOP',
+            'reimbursable' => 0,
+            'reimbursed' => 0,
+            'note' => $fixedExpense['note'] ?? '',
+            'fixed_expense_id' => (int)$fixedExpense['id'],
+        ];
+        Movement::create($movement);
+        redirect('?module=movements');
     }
 
     public function update(): void
@@ -94,12 +197,13 @@ class MovementsController extends Controller
             'reimbursable' => isset($data['reimbursable']) ? 1 : 0,
             'reimbursed' => isset($data['reimbursed']) ? 1 : 0,
             'note' => trim($data['note'] ?? ''),
+            'fixed_expense_id' => !empty($data['fixed_expense_id']) ? (int)$data['fixed_expense_id'] : null,
         ];
     }
 
     private function buildIncomeSuggestion(float $amount, array $accounts): array
     {
-        $rules = SavingsRule::active();
+        $rules = SavingsRule::activeForIncome();
         $suggestions = [];
         $committed = 0.0;
 

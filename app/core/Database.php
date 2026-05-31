@@ -20,6 +20,7 @@ class Database
             self::$connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             self::$connection->exec('PRAGMA foreign_keys = ON;');
             self::initialize(self::$connection);
+            self::ensureSchema(self::$connection);
         }
 
         return self::$connection;
@@ -43,6 +44,23 @@ class Database
 
         if (file_exists($seedPath)) {
             $pdo->exec(file_get_contents($seedPath));
+        }
+    }
+
+    private static function ensureSchema(PDO $pdo): void
+    {
+        self::ensureColumn($pdo, 'movements', 'fixed_expense_id', 'INTEGER');
+        self::ensureColumn($pdo, 'movements', 'savings_rule_id', 'INTEGER');
+        self::ensureColumn($pdo, 'savings_rules', 'frequency', "TEXT DEFAULT 'per_income'");
+        $pdo->exec("UPDATE savings_rules SET frequency = 'per_income' WHERE frequency IS NULL OR frequency = ''");
+    }
+
+    private static function ensureColumn(PDO $pdo, string $table, string $column, string $definition): void
+    {
+        $columns = $pdo->query("PRAGMA table_info($table)")->fetchAll();
+        $names = array_column($columns, 'name');
+        if (!in_array($column, $names, true)) {
+            $pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
         }
     }
 }

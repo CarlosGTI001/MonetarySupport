@@ -38,10 +38,10 @@ class Movement
         try {
             $stmt = $db->prepare('
                 INSERT INTO movements (
-                    date, account_origin_id, account_dest_id, type, category, concept, amount, currency,
+                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, type, category, concept, amount, currency,
                     reimbursable, reimbursed, note
                 ) VALUES (
-                    :date, :account_origin_id, :account_dest_id, :type, :category, :concept, :amount, :currency,
+                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :type, :category, :concept, :amount, :currency,
                     :reimbursable, :reimbursed, :note
                 )
             ');
@@ -49,6 +49,8 @@ class Movement
                 'date' => $data['date'],
                 'account_origin_id' => $data['account_origin_id'],
                 'account_dest_id' => $data['account_dest_id'],
+                'fixed_expense_id' => $data['fixed_expense_id'],
+                'savings_rule_id' => $data['savings_rule_id'],
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],
@@ -132,6 +134,8 @@ class Movement
                 SET date = :date,
                     account_origin_id = :account_origin_id,
                     account_dest_id = :account_dest_id,
+                    fixed_expense_id = :fixed_expense_id,
+                    savings_rule_id = :savings_rule_id,
                     type = :type,
                     category = :category,
                     concept = :concept,
@@ -147,6 +151,8 @@ class Movement
                 'date' => $data['date'],
                 'account_origin_id' => $data['account_origin_id'],
                 'account_dest_id' => $data['account_dest_id'],
+                'fixed_expense_id' => $data['fixed_expense_id'],
+                'savings_rule_id' => $data['savings_rule_id'],
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],

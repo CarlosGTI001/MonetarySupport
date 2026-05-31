@@ -12,7 +12,11 @@ class SavingsController extends Controller
     public function index(): void
     {
         $items = SavingsRule::all();
-        $this->render('savings/index', ['items' => $items]);
+        $pending = SavingsRule::pendingForCurrentPeriod();
+        $this->render('savings/index', [
+            'items' => $items,
+            'pending' => $pending,
+        ]);
     }
 
     public function create(): void
@@ -56,6 +60,7 @@ class SavingsController extends Controller
             'mode' => $data['mode'] ?? 'percentage',
             'percent' => $data['percent'] !== '' ? (float)$data['percent'] : null,
             'amount' => $data['amount'] !== '' ? (float)$data['amount'] : null,
+            'frequency' => $data['frequency'] ?? 'per_income',
             'target_account_id' => !empty($data['target_account_id']) ? (int)$data['target_account_id'] : null,
             'priority' => (int)($data['priority'] ?? 0),
             'active' => isset($data['active']) ? 1 : 0,

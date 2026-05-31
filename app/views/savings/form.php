@@ -31,6 +31,14 @@ $isEdit = !empty($item);
             <label class="form-label">Monto fijo</label>
             <input class="form-control" type="number" step="0.01" name="amount" value="<?= e((string)($item['amount'] ?? '')) ?>">
         </div>
+        <div class="col-md-3">
+            <label class="form-label">Frecuencia (solo monto fijo)</label>
+            <select class="form-select" name="frequency">
+                <?php foreach (['per_income' => 'Por ingreso', 'monthly' => 'Mensual', 'biweekly' => 'Quincenal'] as $value => $label): ?>
+                    <option value="<?= $value ?>" <?= (($item['frequency'] ?? 'per_income') === $value) ? 'selected' : '' ?>><?= $label ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
         <div class="col-md-6">
             <label class="form-label">Cuenta destino</label>
             <select class="form-select" name="target_account_id">
