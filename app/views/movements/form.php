@@ -185,43 +185,43 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
 </div>
 
 <script>
-let activeTargetSelectId = null;
-const accountSearchModal = new bootstrap.Modal(document.getElementById('accountSearchModal'));
-const accountSearchInput = document.getElementById('accountSearchInput');
-const accountSearchItems = document.querySelectorAll('.account-search-item');
+(() => {
+    let activeTargetSelectId = null;
+    let modalInstance = null;
 
-function openAccountSearch(targetId) {
-    activeTargetSelectId = targetId;
-    accountSearchInput.value = '';
-    filterAccounts('');
-    accountSearchModal.show();
-    setTimeout(() => accountSearchInput.focus(), 500);
-}
-
-function filterAccounts(query) {
-    const q = query.toLowerCase();
-    accountSearchItems.forEach(item => {
-        const name = item.dataset.name.toLowerCase();
-        item.style.display = name.includes(q) ? '' : 'none';
-    });
-}
-
-accountSearchInput.addEventListener('input', (e) => {
-    filterAccounts(e.target.value);
-});
-
-accountSearchItems.forEach(item => {
-    item.addEventListener('click', () => {
-        const accountId = item.dataset.id;
-        const targetSelect = document.getElementById(activeTargetSelectId);
-        if (targetSelect) {
-            targetSelect.value = accountId;
-            // Disparar evento change por si hay listeners
-            targetSelect.dispatchEvent(new Event('change'));
+    window.openAccountSearch = (targetId) => {
+        activeTargetSelectId = targetId;
+        const modalEl = document.getElementById('accountSearchModal');
+        const inputEl = document.getElementById('accountSearchInput');
+        const items = document.querySelectorAll('.account-search-item');
+        
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl);
+            inputEl.addEventListener('input', (e) => {
+                const q = e.target.value.toLowerCase();
+                items.forEach(item => {
+                    const name = item.dataset.name.toLowerCase();
+                    item.style.display = name.includes(q) ? '' : 'none';
+                });
+            });
+            items.forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetSelect = document.getElementById(activeTargetSelectId);
+                    if (targetSelect) {
+                        targetSelect.value = item.dataset.id;
+                        targetSelect.dispatchEvent(new Event('change'));
+                    }
+                    modalInstance.hide();
+                });
+            });
         }
-        accountSearchModal.hide();
-    });
-});
+        
+        inputEl.value = '';
+        items.forEach(i => i.style.display = '');
+        modalInstance.show();
+        setTimeout(() => inputEl.focus(), 500);
+    };
+})();
 
 (() => {
     const select = document.getElementById('fixedExpenseSelect');
