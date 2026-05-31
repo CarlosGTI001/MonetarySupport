@@ -59,7 +59,7 @@
             <div class="card-body">
                 <div class="text-muted">Proyeccion a proxima quincena</div>
                 <div class="fs-4 fw-bold"><?= format_money($projection, 'DOP') ?></div>
-                <div class="small text-muted">Incluye gastos fijos y transporte</div>
+                <div class="small text-muted">Balance liquido menos gastos fijos, financiamientos y transporte</div>
             </div>
         </div>
     </div>

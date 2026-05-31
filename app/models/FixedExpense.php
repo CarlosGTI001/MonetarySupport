@@ -168,15 +168,29 @@ class FixedExpense
     public static function nextDueDate(array $item): ?string
     {
         $today = date('Y-m-d');
-        $start = $item['start_date'] ?: $today;
+        $day = (int)date('d');
 
         if ($item['frequency'] === 'monthly') {
-            $date = date('Y-m-d', strtotime(date('Y-m-01') . ' +1 month'));
-            return $date;
+            $dueDay = 1;
+            if (!empty($item['start_date'])) {
+                $dueDay = (int)date('d', strtotime($item['start_date']));
+            }
+            
+            if ($day < $dueDay) {
+                return date('Y-m-') . sprintf('%02d', $dueDay);
+            } else {
+                return date('Y-m-d', strtotime(date('Y-m-') . sprintf('%02d', $dueDay) . ' +1 month'));
+            }
         }
 
         if ($item['frequency'] === 'biweekly') {
-            return date('Y-m-d', strtotime($today . ' +14 days'));
+            if ($day < 15) {
+                return date('Y-m-15');
+            } elseif ($day < 30) {
+                return date('Y-m-t');
+            } else {
+                return date('Y-m-15', strtotime('+1 month'));
+            }
         }
 
         if ($item['frequency'] === 'custom' && !empty($item['every_days'])) {

@@ -57,7 +57,15 @@ class DashboardController extends Controller
 
         $totalDop = (float)($totals['DOP'] ?? 0);
         $totalUsd = (float)($totals['USD'] ?? 0);
-        $projection = $totalDop - $upcomingTotal - $transportQuincenal;
+
+        $spendableDop = 0.0;
+        foreach ($accounts as $account) {
+            if ($account['currency'] === 'DOP' && !str_contains(strtolower((string)$account['purpose']), 'ahorro')) {
+                $spendableDop += (float)$account['balance'];
+            }
+        }
+
+        $projection = $spendableDop - $upcomingTotal - $transportQuincenal;
 
         $this->render('dashboard/index', [
             'accounts' => $accounts,
