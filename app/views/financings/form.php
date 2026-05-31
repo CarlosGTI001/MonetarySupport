@@ -14,7 +14,7 @@ $isEdit = !empty($item);
         <div class="col-md-3">
             <label class="form-label">Monto cuota</label>
             <div class="input-group">
-                <input class="form-control" type="number" step="0.01" name="installment_amount" value="<?= e((string)($item['installment_amount'] ?? 0)) ?>">
+                <input class="form-control" type="number" step="any" name="installment_amount" value="<?= e((string)($item['installment_amount'] ?? 0)) ?>">
                 <select class="form-select" name="currency" style="max-width: 90px;">
                     <option value="DOP" <?= (($item['currency'] ?? 'DOP') === 'DOP') ? 'selected' : '' ?>>DOP</option>
                     <option value="USD" <?= (($item['currency'] ?? 'DOP') === 'USD') ? 'selected' : '' ?>>USD</option>
@@ -51,11 +51,11 @@ $isEdit = !empty($item);
         </div>
         <div class="col-md-3">
             <label class="form-label">Total pagado</label>
-            <input class="form-control" type="number" step="0.01" name="total_paid" value="<?= e((string)($item['total_paid'] ?? 0)) ?>">
+            <input class="form-control" type="number" step="any" name="total_paid" value="<?= e((string)($item['total_paid'] ?? 0)) ?>">
         </div>
         <div class="col-md-3">
             <label class="form-label">Total pendiente</label>
-            <input class="form-control" type="number" step="0.01" name="total_pending" value="<?= e((string)($item['total_pending'] ?? 0)) ?>">
+            <input class="form-control" type="number" step="any" name="total_pending" value="<?= e((string)($item['total_pending'] ?? 0)) ?>">
         </div>
         <div class="col-md-3">
             <label class="form-label">Proxima fecha</label>

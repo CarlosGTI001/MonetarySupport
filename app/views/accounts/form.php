@@ -23,9 +23,9 @@ $isEdit = !empty($account);
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Balance</label>
-            <input class="form-control" type="number" step="0.01" name="balance" value="<?= e((string)($account['balance'] ?? 0)) ?>">
+        <div class="mb-3">
+            <label class="form-label">Balance Inicial / Actual</label>
+            <input class="form-control" type="number" step="any" name="balance" value="<?= e((string)($account['balance'] ?? 0)) ?>">
         </div>
         <div class="col-md-6">
             <label class="form-label">Proposito</label>

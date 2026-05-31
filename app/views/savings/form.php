@@ -25,11 +25,11 @@ $isEdit = !empty($item);
         </div>
         <div class="col-md-3">
             <label class="form-label">Porcentaje</label>
-            <input class="form-control" type="number" step="0.01" name="percent" value="<?= e((string)($item['percent'] ?? '')) ?>">
+            <input class="form-control" type="number" step="any" name="percent" value="<?= e((string)($item['percent'] ?? '')) ?>">
         </div>
         <div class="col-md-3">
             <label class="form-label">Monto fijo</label>
-            <input class="form-control" type="number" step="0.01" name="amount" value="<?= e((string)($item['amount'] ?? '')) ?>">
+            <input class="form-control" type="number" step="any" name="amount" value="<?= e((string)($item['amount'] ?? '')) ?>">
         </div>
         <div class="col-md-3">
             <label class="form-label">Frecuencia (solo monto fijo)</label>

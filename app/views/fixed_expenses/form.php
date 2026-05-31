@@ -14,7 +14,7 @@ $isEdit = !empty($item);
         <div class="col-md-3">
             <label class="form-label">Monto</label>
             <div class="input-group">
-                <input class="form-control" type="number" step="0.01" name="amount" value="<?= e((string)($item['amount'] ?? 0)) ?>">
+                <input class="form-control" type="number" step="any" name="amount" value="<?= e((string)($item['amount'] ?? 0)) ?>">
                 <select class="form-select" name="currency" style="max-width: 90px;">
                     <option value="DOP" <?= (($item['currency'] ?? 'DOP') === 'DOP') ? 'selected' : '' ?>>DOP</option>
                     <option value="USD" <?= (($item['currency'] ?? 'DOP') === 'USD') ? 'selected' : '' ?>>USD</option>

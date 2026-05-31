@@ -81,7 +81,7 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Monto (default total diario)</label>
-                        <input class="form-control" type="number" step="0.01" name="amount" value="<?= e((string)$dailyTotal) ?>" required>
+                        <input class="form-control" type="number" step="any" name="amount" value="<?= e((string)$dailyTotal) ?>" required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Concepto</label>
