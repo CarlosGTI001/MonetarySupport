@@ -67,14 +67,20 @@
 
 <style>
     @media print {
+        @page { size: auto; margin: 15mm; }
         .no-print { display: none !important; }
-        body { background: white !important; }
+        body { background: white !important; font-family: 'Inter', sans-serif !important; }
         .report-container { border: none !important; box-shadow: none !important; padding: 0 !important; }
         #sidebar, .main-header { display: none !important; }
         #main-wrapper { margin-left: 0 !important; }
         main { padding: 0 !important; }
+        .custom-report-table { width: 100% !important; border-collapse: collapse !important; }
+        .custom-report-table th { background-color: #f8fafc !important; color: #64748b !important; -webkit-print-color-adjust: exact; }
+        .badge { border: 1px solid #e2e8f0 !important; -webkit-print-color-adjust: exact; }
     }
     .custom-report-table thead th { border-top: none; }
     .custom-report-table tbody tr:last-child { border-bottom: none; }
     .x-small { font-size: 0.7rem; }
+    .hover-lift { transition: transform 0.2s; }
+    .hover-lift:hover { transform: translateY(-2px); }
 </style>

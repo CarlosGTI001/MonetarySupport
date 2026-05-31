@@ -1,6 +1,6 @@
 <div class="mb-5">
     <h3 class="fw-bold mb-1">Centro de Reportes</h3>
-    <p class="text-muted mb-0 small">Exporta y analiza tus datos financieros en formatos profesionales.</p>
+    <p class="text-muted mb-0 small">Genera documentos profesionales en formatos PDF y XLSX (Excel) con alta fidelidad.</p>
 </div>
 
 <div class="row g-4">

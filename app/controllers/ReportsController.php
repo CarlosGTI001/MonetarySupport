@@ -159,23 +159,16 @@ class ReportsController extends Controller
 
     private function exportExcel(string $type, array $data): void
     {
-        $filename = $type . '_' . date('Ymd_His') . '.xls';
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment; filename=' . $filename);
-
-        echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-        echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body>';
-        echo '<h2>' . e($data['title']) . '</h2>';
-        echo '<table border="1">';
-        echo '<tr>';
-        foreach ($data['headers'] as $h) echo '<th style="background-color: #0f172a; color: white;">' . e($h) . '</th>';
-        echo '</tr>';
+        require_once __DIR__ . '/../core/libs/SimpleXLSXGen.php';
+        
+        $xlsxData = [];
+        $xlsxData[] = $data['headers'];
         foreach ($data['rows'] as $row) {
-            echo '<tr>';
-            foreach ($row as $cell) echo '<td>' . e((string)$cell) . '</td>';
-            echo '</tr>';
+            $xlsxData[] = $row;
         }
-        echo '</table></body></html>';
+
+        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($xlsxData);
+        $xlsx->downloadAs($type . '_' . date('Ymd_His') . '.xlsx');
         exit;
     }
 }
