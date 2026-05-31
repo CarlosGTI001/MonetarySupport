@@ -72,6 +72,7 @@ class DashboardController extends Controller
             'totals' => $totals,
             'cash' => $cash,
             'savings' => $savings,
+            'spendableDop' => $spendableDop,
             'monthlyExpenses' => $monthlyExpenses,
             'pendingWork' => $pendingWork,
             'upcomingFixed' => $upcomingFixed,

@@ -58,8 +58,11 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="text-muted">Proyeccion a proxima quincena</div>
-                <div class="fs-4 fw-bold"><?= format_money($projection, 'DOP') ?></div>
-                <div class="small text-muted">Balance liquido menos gastos fijos, financiamientos y transporte</div>
+                <div class="fs-4 fw-bold <?= $projection < 0 ? 'text-danger' : 'text-success' ?>"><?= format_money($projection, 'DOP') ?></div>
+                <div class="small text-muted">
+                    <?= format_money($spendableDop, 'DOP') ?> (liq.) - 
+                    <?= format_money($upcomingTotal + $transportQuincenal, 'DOP') ?> (gastos)
+                </div>
             </div>
         </div>
     </div>
