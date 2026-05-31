@@ -81,7 +81,7 @@
             <p class="text-muted small mb-0">Tus activos están distribuidos principalmente en cuentas de <?= e($accounts[0]['type'] ?? 'banco') ?>.</p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <button class="btn btn-outline-dark fw-bold rounded-pill px-4">Ver Reporte Detallado</button>
+            <a href="?module=reports&action=view&type=accounts" class="btn btn-outline-dark fw-bold rounded-pill px-4">Ver Reporte Detallado</a>
         </div>
     </div>
 </div>
