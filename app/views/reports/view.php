@@ -4,8 +4,11 @@
     </a>
     <div class="d-flex gap-2">
         <button onclick="window.print()" class="btn btn-dark btn-sm rounded-pill px-4 fw-bold">
-            <i class="bi bi-printer me-2"></i> Imprimir / PDF
+            <i class="bi bi-printer me-2"></i> Vista Imprimible
         </button>
+        <a href="?module=reports&action=view&type=<?= e($type) ?>&format=pdf_lib" class="btn btn-danger btn-sm rounded-pill px-4 fw-bold">
+            <i class="bi bi-file-pdf me-2"></i> Descargar PDF (Lib)
+        </a>
         <a href="?module=reports&action=view&type=<?= e($type) ?>&format=excel" class="btn btn-success btn-sm rounded-pill px-4 fw-bold">
             <i class="bi bi-file-earmark-excel me-2"></i> Descargar Excel
         </a>

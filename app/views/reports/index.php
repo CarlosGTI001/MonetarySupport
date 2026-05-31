@@ -40,7 +40,7 @@
                     </a>
                     <div class="row g-2">
                         <div class="col-6">
-                            <a href="?module=reports&action=view&type=<?= $r['type'] ?>&format=pdf" class="btn btn-outline-dark btn-sm w-100 fw-bold rounded-pill">
+                            <a href="?module=reports&action=view&type=<?= $r['type'] ?>&format=pdf_lib" class="btn btn-outline-dark btn-sm w-100 fw-bold rounded-pill">
                                 <i class="bi bi-file-pdf"></i> PDF
                             </a>
                         </div>

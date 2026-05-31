@@ -24,6 +24,11 @@ class ReportsController extends Controller
             return;
         }
 
+        if ($format === 'pdf_lib') {
+            $this->exportPdf($type, $data);
+            return;
+        }
+
         $this->render('reports/view', [
             'type' => $type,
             'title' => $data['title'],
@@ -31,6 +36,55 @@ class ReportsController extends Controller
             'rows' => $data['rows'],
             'isPrint' => ($format === 'pdf')
         ]);
+    }
+
+    private function exportPdf(string $type, array $data): void
+    {
+        require_once __DIR__ . '/../core/libs/fpdf.php';
+
+        $pdf = new \FPDF('P', 'mm', 'A4');
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 16);
+        
+        // Header / Branding
+        $pdf->SetFillColor(15, 23, 42); // #0f172a
+        $pdf->Rect(0, 0, 210, 40, 'F');
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->Text(20, 20, 'MonetarySupport');
+        $pdf->SetFont('Arial', '', 10);
+        $pdf->Text(20, 28, 'Reporte de Gestion Financiera Personal');
+        
+        $pdf->SetY(50);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 10, utf8_decode($data['title']), 0, 1, 'L');
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->SetTextColor(100, 100, 100);
+        $pdf->Cell(0, 5, 'Generado el: ' . date('d/m/Y H:i'), 0, 1, 'L');
+        $pdf->Ln(10);
+
+        // Table
+        $pdf->SetFillColor(248, 250, 252);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->SetFont('Arial', 'B', 8);
+        
+        $colWidth = 170 / count($data['headers']);
+        foreach ($data['headers'] as $header) {
+            $pdf->Cell($colWidth, 10, strtoupper(utf8_decode($header)), 0, 0, 'L', true);
+        }
+        $pdf->Ln();
+
+        $pdf->SetTextColor(30, 41, 59);
+        $pdf->SetFont('Arial', '', 8);
+        foreach ($data['rows'] as $row) {
+            foreach ($row as $cell) {
+                $pdf->Cell($colWidth, 8, utf8_decode((string)$cell), 'B', 0, 'L');
+            }
+            $pdf->Ln();
+        }
+
+        $pdf->Output('D', $type . '_' . date('Ymd_His') . '.pdf');
+        exit;
     }
 
     private function getReportData(string $type): array
