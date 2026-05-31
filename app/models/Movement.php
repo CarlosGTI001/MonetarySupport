@@ -253,9 +253,10 @@ class Movement
 
         if ($type === 'ingreso') {
             Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
+        } elseif ($type === 'ajuste') {
+            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
         } else {
-            // It was a Gasto, Gasto Laboral, Transferencia or Ajuste
-            // If it was an adjustment, amount could be negative
+            // Gasto, Gasto Laboral or Transferencia
             Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
             
             // Reverse Tax if applied (only for outgoing)
@@ -266,7 +267,7 @@ class Movement
         }
 
         // 2. Reverse Destination Account (if it was a transfer)
-        if ($destAccount) {
+        if ($destAccount && $type !== 'ajuste') {
             $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
             Account::adjustBalance((int)$destAccount['id'], -$destAdjAmount);
         }
@@ -288,8 +289,10 @@ class Movement
 
         if ($type === 'ingreso') {
             Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
+        } elseif ($type === 'ajuste') {
+            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
         } else {
-            // Gasto, Gasto Laboral, Transferencia or Ajuste
+            // Gasto, Gasto Laboral or Transferencia
             Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
             
             // Apply Tax (only for outgoing)
@@ -299,8 +302,8 @@ class Movement
             }
         }
 
-        // 2. Apply to Destination Account (if present, effectively a transfer)
-        if ($destAccount) {
+        // 2. Apply to Destination Account (if present and NOT an adjustment)
+        if ($destAccount && $type !== 'ajuste') {
             $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
             Account::adjustBalance((int)$destAccount['id'], $destAdjAmount);
         }
