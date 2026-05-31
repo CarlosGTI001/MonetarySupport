@@ -47,12 +47,13 @@ class FixedExpense
     {
         $db = Database::getConnection();
         $stmt = $db->prepare('
-            INSERT INTO fixed_expenses (name, amount, frequency, every_days, account_id, start_date, end_date, active, note)
-            VALUES (:name, :amount, :frequency, :every_days, :account_id, :start_date, :end_date, :active, :note)
+            INSERT INTO fixed_expenses (name, amount, currency, frequency, every_days, account_id, start_date, end_date, active, note)
+            VALUES (:name, :amount, :currency, :frequency, :every_days, :account_id, :start_date, :end_date, :active, :note)
         ');
         $stmt->execute([
             'name' => $data['name'],
             'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'DOP',
             'frequency' => $data['frequency'],
             'every_days' => $data['every_days'],
             'account_id' => $data['account_id'],
@@ -71,6 +72,7 @@ class FixedExpense
             UPDATE fixed_expenses
             SET name = :name,
                 amount = :amount,
+                currency = :currency,
                 frequency = :frequency,
                 every_days = :every_days,
                 account_id = :account_id,
@@ -84,6 +86,7 @@ class FixedExpense
             'id' => $id,
             'name' => $data['name'],
             'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'DOP',
             'frequency' => $data['frequency'],
             'every_days' => $data['every_days'],
             'account_id' => $data['account_id'],

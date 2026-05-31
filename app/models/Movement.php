@@ -237,82 +237,104 @@ class Movement
 
     private static function reverseBalance(array $movement): void
     {
-        $data = [
-            'account_origin_id' => $movement['account_origin_id'],
-            'account_dest_id' => $movement['account_dest_id'],
-            'type' => $movement['type'],
-            'amount' => (float)$movement['amount'],
-            'apply_dgii_tax' => (bool)($movement['apply_dgii_tax'] ?? false),
-        ];
+        $db = Database::getConnection();
+        $originAccount = Account::find((int)$movement['account_origin_id']);
+        $destAccount = !empty($movement['account_dest_id']) ? Account::find((int)$movement['account_dest_id']) : null;
 
-        $amount = (float)$data['amount'];
-        $type = $data['type'];
+        $amount = (float)$movement['amount'];
+        $type = $movement['type'];
+        $movCurrency = $movement['currency'];
+        $applyTax = (bool)($movement['apply_dgii_tax'] ?? false);
+
+        // Origin balance adjustment
+        $originAdjAmount = $amount;
+        if ($movCurrency !== $originAccount['currency']) {
+            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency']);
+        }
 
         if ($type === 'ingreso') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
             return;
         }
 
         if ($type === 'gasto' || $type === 'gasto_laboral') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
-            if ($data['apply_dgii_tax']) {
-                $tax = abs($amount) * 0.0015;
-                Account::adjustBalance((int)$data['account_origin_id'], $tax);
+            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
+            if ($applyTax) {
+                $tax = abs($originAdjAmount) * 0.0015;
+                Account::adjustBalance((int)$originAccount['id'], $tax);
             }
             return;
         }
 
         if ($type === 'transferencia') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
-            if ($data['apply_dgii_tax']) {
-                $tax = abs($amount) * 0.0015;
-                Account::adjustBalance((int)$data['account_origin_id'], $tax);
+            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
+            if ($applyTax) {
+                $tax = abs($originAdjAmount) * 0.0015;
+                Account::adjustBalance((int)$originAccount['id'], $tax);
             }
-            if (!empty($data['account_dest_id'])) {
-                Account::adjustBalance((int)$data['account_dest_id'], -$amount);
+            if ($destAccount) {
+                $destAdjAmount = $amount;
+                if ($movCurrency !== $destAccount['currency']) {
+                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency']);
+                }
+                Account::adjustBalance((int)$destAccount['id'], -$destAdjAmount);
             }
             return;
         }
 
         if ($type === 'ajuste') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
         }
     }
 
     private static function applyBalance(array $data): void
     {
+        $originAccount = Account::find((int)$data['account_origin_id']);
+        $destAccount = !empty($data['account_dest_id']) ? Account::find((int)$data['account_dest_id']) : null;
+
         $amount = (float)$data['amount'];
         $type = $data['type'];
+        $movCurrency = $data['currency'];
         $applyTax = (bool)($data['apply_dgii_tax'] ?? false);
 
+        // Origin balance adjustment
+        $originAdjAmount = $amount;
+        if ($movCurrency !== $originAccount['currency']) {
+            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency']);
+        }
+
         if ($type === 'ingreso') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
+            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
             return;
         }
 
         if ($type === 'gasto' || $type === 'gasto_laboral') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
             if ($applyTax) {
-                $tax = abs($amount) * 0.0015;
-                Account::adjustBalance((int)$data['account_origin_id'], -$tax);
+                $tax = abs($originAdjAmount) * 0.0015;
+                Account::adjustBalance((int)$originAccount['id'], -$tax);
             }
             return;
         }
 
         if ($type === 'transferencia') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
             if ($applyTax) {
-                $tax = abs($amount) * 0.0015;
-                Account::adjustBalance((int)$data['account_origin_id'], -$tax);
+                $tax = abs($originAdjAmount) * 0.0015;
+                Account::adjustBalance((int)$originAccount['id'], -$tax);
             }
-            if (!empty($data['account_dest_id'])) {
-                Account::adjustBalance((int)$data['account_dest_id'], $amount);
+            if ($destAccount) {
+                $destAdjAmount = $amount;
+                if ($movCurrency !== $destAccount['currency']) {
+                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency']);
+                }
+                Account::adjustBalance((int)$destAccount['id'], $destAdjAmount);
             }
             return;
         }
 
         if ($type === 'ajuste') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
+            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
         }
     }
 
@@ -320,28 +342,57 @@ class Movement
     {
         $db = Database::getConnection();
         $stmt = $db->prepare('
-            SELECT SUM(amount) as total
+            SELECT amount, currency
             FROM movements
             WHERE type IN ("gasto", "gasto_laboral")
             AND strftime("%Y-%m", date) = :month
         ');
         $stmt->execute(['month' => $month]);
-        $row = $stmt->fetch();
-        return (float)($row['total'] ?? 0);
+        $rows = $stmt->fetchAll();
+        
+        $total = 0.0;
+        foreach ($rows as $row) {
+            $amt = (float)$row['amount'];
+            if ($row['currency'] === 'USD') {
+                $amt = convert_currency($amt, 'USD', 'DOP');
+            }
+            $total += $amt;
+        }
+        return $total;
     }
 
     public static function expensesByCategory(string $month): array
     {
         $db = Database::getConnection();
         $stmt = $db->prepare('
-            SELECT category, SUM(amount) as total
+            SELECT category, amount, currency
             FROM movements
             WHERE type IN ("gasto", "gasto_laboral")
             AND strftime("%Y-%m", date) = :month
-            GROUP BY category
-            ORDER BY total DESC
         ');
         $stmt->execute(['month' => $month]);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        
+        $categories = [];
+        foreach ($rows as $row) {
+            $cat = $row['category'] ?: 'Sin categoría';
+            $amt = (float)$row['amount'];
+            if ($row['currency'] === 'USD') {
+                $amt = convert_currency($amt, 'USD', 'DOP');
+            }
+            
+            if (!isset($categories[$cat])) {
+                $categories[$cat] = 0.0;
+            }
+            $categories[$cat] += $amt;
+        }
+        
+        $result = [];
+        foreach ($categories as $cat => $total) {
+            $result[] = ['category' => $cat, 'total' => $total];
+        }
+        
+        usort($result, fn($a, $b) => $b['total'] <=> $a['total']);
+        return $result;
     }
 }

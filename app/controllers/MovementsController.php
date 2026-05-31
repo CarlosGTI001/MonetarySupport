@@ -66,13 +66,7 @@ class MovementsController extends Controller
         if (!empty($_GET['fixed_expense_id'])) {
             $fixedExpense = FixedExpense::find((int)$_GET['fixed_expense_id']);
             if ($fixedExpense) {
-                $currency = 'DOP';
-                if (!empty($fixedExpense['account_id'])) {
-                    $account = Account::find((int)$fixedExpense['account_id']);
-                    if (!empty($account['currency'])) {
-                        $currency = $account['currency'];
-                    }
-                }
+                $currency = $fixedExpense['currency'] ?? 'DOP';
                 $movement = [
                     'date' => current_date(),
                     'account_origin_id' => $fixedExpense['account_id'] ?? null,
@@ -180,7 +174,7 @@ class MovementsController extends Controller
             'category' => 'Gasto fijo',
             'concept' => $fixedExpense['name'],
             'amount' => (float)$fixedExpense['amount'],
-            'currency' => $account['currency'] ?? 'DOP',
+            'currency' => $fixedExpense['currency'] ?? 'DOP',
             'reimbursable' => 0,
             'reimbursed' => 0,
             'note' => $fixedExpense['note'] ?? '',

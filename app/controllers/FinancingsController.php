@@ -60,6 +60,7 @@ class FinancingsController extends Controller
             'total_paid' => (float)($data['total_paid'] ?? 0),
             'total_pending' => (float)($data['total_pending'] ?? 0),
             'next_date' => $data['next_date'] ?: null,
+            'currency' => $data['currency'] ?? 'DOP',
             'note' => trim($data['note'] ?? ''),
         ];
     }

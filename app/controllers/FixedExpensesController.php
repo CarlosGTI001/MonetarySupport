@@ -60,6 +60,7 @@ class FixedExpensesController extends Controller
             'start_date' => $data['start_date'] ?: null,
             'end_date' => $data['end_date'] ?: null,
             'active' => isset($data['active']) ? 1 : 0,
+            'currency' => $data['currency'] ?? 'DOP',
             'note' => trim($data['note'] ?? ''),
         ];
     }

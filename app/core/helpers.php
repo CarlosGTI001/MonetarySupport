@@ -27,6 +27,27 @@ function current_date(): string
     return date('Y-m-d');
 }
 
+function get_exchange_rate(): float
+{
+    // Tasa fija por defecto, podría ser una configuración en la DB
+    return 60.00;
+}
+
+function convert_currency(float $amount, string $from, string $to): float
+{
+    if ($from === $to) return $amount;
+    
+    $rate = get_exchange_rate();
+    if ($from === 'USD' && $to === 'DOP') {
+        return $amount * $rate;
+    }
+    if ($from === 'DOP' && $to === 'USD') {
+        return $amount / $rate;
+    }
+    
+    return $amount;
+}
+
 function get_movement_icon(string $type): string
 {
     return match ($type) {

@@ -65,7 +65,7 @@
                 <div class="pt-3 border-top d-flex justify-content-between align-items-end">
                     <div>
                         <div class="small text-muted text-uppercase fw-bold mb-1" style="font-size: 0.65rem;">Monto Estimado</div>
-                        <div class="fs-3 fw-bold text-dark"><?= format_money((float)$item['amount'], 'DOP') ?></div>
+                        <div class="fs-3 fw-bold text-dark"><?= format_money((float)$item['amount'], $item['currency'] ?? 'DOP') ?></div>
                     </div>
                     <a href="?module=movements&action=create&fixed_expense_id=<?= (int)$item['id'] ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
                         Pagar Ahora

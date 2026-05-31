@@ -48,6 +48,12 @@
                 <div>
                     <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.65rem;">Proyección Quincena</div>
                     <div class="fs-4 fw-bold <?= $projection < 0 ? 'text-danger' : 'text-success' ?>"><?= format_money($projection, 'DOP') ?></div>
+                    <div class="x-small text-muted mt-1">
+                        <?= format_money($spendableDop, 'DOP') ?> (liq.) - <?= format_money($upcomingTotal + $transportQuincenal, 'DOP') ?> (gastos)
+                    </div>
+                    <div class="x-small text-muted border-top mt-1 pt-1" style="font-size: 0.55rem;">
+                        Tasa: 1 USD = <?= number_format(get_exchange_rate(), 2) ?> DOP
+                    </div>
                 </div>
             </div>
         </div>

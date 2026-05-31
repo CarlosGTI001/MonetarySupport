@@ -63,7 +63,7 @@
                     <div class="col-6">
                         <div class="p-2 bg-light rounded text-center">
                             <div class="small text-muted text-uppercase" style="font-size: 0.6rem;">Cuota</div>
-                            <div class="fw-bold text-primary"><?= format_money((float)$item['installment_amount'], 'DOP') ?></div>
+                            <div class="fw-bold text-primary"><?= format_money((float)$item['installment_amount'], $item['currency'] ?? 'DOP') ?></div>
                         </div>
                     </div>
                     <div class="col-6">
@@ -77,11 +77,11 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <div class="small text-muted" style="font-size: 0.75rem;">Pendiente:</div>
-                        <div class="fw-bold text-danger"><?= format_money((float)($item['total_pending'] ?? 0), 'DOP') ?></div>
+                        <div class="fw-bold text-danger"><?= format_money((float)($item['total_pending'] ?? 0), $item['currency'] ?? 'DOP') ?></div>
                     </div>
                     <div class="text-end">
                         <div class="small text-muted" style="font-size: 0.75rem;">Total pagado:</div>
-                        <div class="fw-bold text-success"><?= format_money((float)($item['total_paid'] ?? 0), 'DOP') ?></div>
+                        <div class="fw-bold text-success"><?= format_money((float)($item['total_paid'] ?? 0), $item['currency'] ?? 'DOP') ?></div>
                     </div>
                 </div>
             </div>

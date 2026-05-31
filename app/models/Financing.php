@@ -27,16 +27,17 @@ class Financing
         $db = Database::getConnection();
         $stmt = $db->prepare('
             INSERT INTO financings (
-                name, installment_amount, frequency, total_payments, payments_made, start_date, end_date,
+                name, installment_amount, currency, frequency, total_payments, payments_made, start_date, end_date,
                 status, total_paid, total_pending, next_date, note
             ) VALUES (
-                :name, :installment_amount, :frequency, :total_payments, :payments_made, :start_date, :end_date,
+                :name, :installment_amount, :currency, :frequency, :total_payments, :payments_made, :start_date, :end_date,
                 :status, :total_paid, :total_pending, :next_date, :note
             )
         ');
         $stmt->execute([
             'name' => $data['name'],
             'installment_amount' => $data['installment_amount'],
+            'currency' => $data['currency'] ?? 'DOP',
             'frequency' => $data['frequency'],
             'total_payments' => $data['total_payments'],
             'payments_made' => $data['payments_made'],
@@ -58,6 +59,7 @@ class Financing
             UPDATE financings
             SET name = :name,
                 installment_amount = :installment_amount,
+                currency = :currency,
                 frequency = :frequency,
                 total_payments = :total_payments,
                 payments_made = :payments_made,
@@ -74,6 +76,7 @@ class Financing
             'id' => $id,
             'name' => $data['name'],
             'installment_amount' => $data['installment_amount'],
+            'currency' => $data['currency'] ?? 'DOP',
             'frequency' => $data['frequency'],
             'total_payments' => $data['total_payments'],
             'payments_made' => $data['payments_made'],

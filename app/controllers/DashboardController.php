@@ -44,7 +44,11 @@ class DashboardController extends Controller
         $upcomingFixed = FixedExpense::upcoming($nextPayDate);
         $upcomingTotal = 0.0;
         foreach ($upcomingFixed as $item) {
-            $upcomingTotal += (float)$item['amount'];
+            $amount = (float)$item['amount'];
+            if (($item['currency'] ?? 'DOP') === 'USD') {
+                $amount = convert_currency($amount, 'USD', 'DOP');
+            }
+            $upcomingTotal += $amount;
         }
 
         $db = Database::getConnection();
@@ -52,7 +56,11 @@ class DashboardController extends Controller
         $stmt->execute(['next' => $nextPayDate]);
         $upcomingFinancings = $stmt->fetchAll();
         foreach ($upcomingFinancings as $item) {
-            $upcomingTotal += (float)$item['installment_amount'];
+            $amount = (float)$item['installment_amount'];
+            if (($item['currency'] ?? 'DOP') === 'USD') {
+                $amount = convert_currency($amount, 'USD', 'DOP');
+            }
+            $upcomingTotal += $amount;
         }
 
         $totalDop = (float)($totals['DOP'] ?? 0);
