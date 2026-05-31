@@ -57,34 +57,51 @@ class ReportsController extends Controller
         $pdf->SetY(50);
         $pdf->SetTextColor(0, 0, 0);
         $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, utf8_decode($data['title']), 0, 1, 'L');
+        
+        $reportTitle = isset($data['title']) ? (string)$data['title'] : 'Reporte';
+        $pdf->Cell(0, 10, $this->toIso($reportTitle), 0, 1, 'L');
+        
         $pdf->SetFont('Arial', '', 9);
         $pdf->SetTextColor(100, 100, 100);
         $pdf->Cell(0, 5, 'Generado el: ' . date('d/m/Y H:i'), 0, 1, 'L');
         $pdf->Ln(10);
 
         // Table
-        $pdf->SetFillColor(248, 250, 252);
-        $pdf->SetTextColor(100, 116, 139);
-        $pdf->SetFont('Arial', 'B', 8);
-        
-        $colWidth = 170 / count($data['headers']);
-        foreach ($data['headers'] as $header) {
-            $pdf->Cell($colWidth, 10, strtoupper(utf8_decode($header)), 0, 0, 'L', true);
-        }
-        $pdf->Ln();
-
-        $pdf->SetTextColor(30, 41, 59);
-        $pdf->SetFont('Arial', '', 8);
-        foreach ($data['rows'] as $row) {
-            foreach ($row as $cell) {
-                $pdf->Cell($colWidth, 8, utf8_decode((string)$cell), 'B', 0, 'L');
+        if (!empty($data['headers'])) {
+            $pdf->SetFillColor(248, 250, 252);
+            $pdf->SetTextColor(100, 116, 139);
+            $pdf->SetFont('Arial', 'B', 8);
+            
+            $headerCount = count($data['headers']);
+            $colWidth = 170 / ($headerCount > 0 ? $headerCount : 1);
+            
+            foreach ($data['headers'] as $header) {
+                $pdf->Cell($colWidth, 10, strtoupper($this->toIso((string)$header)), 0, 0, 'L', true);
             }
             $pdf->Ln();
+
+            $pdf->SetTextColor(30, 41, 59);
+            $pdf->SetFont('Arial', '', 8);
+            foreach ($data['rows'] as $row) {
+                foreach ($row as $cell) {
+                    $pdf->Cell($colWidth, 8, $this->toIso((string)$cell), 'B', 0, 'L');
+                }
+                $pdf->Ln();
+            }
+        } else {
+            $pdf->Cell(0, 10, 'No hay datos para mostrar en este reporte.', 0, 1);
         }
 
         $pdf->Output('D', $type . '_' . date('Ymd_His') . '.pdf');
         exit;
+    }
+
+    private function toIso(string $str): string
+    {
+        if (function_exists('mb_convert_encoding')) {
+            return mb_convert_encoding($str, 'ISO-8859-1', 'UTF-8');
+        }
+        return utf8_decode($str);
     }
 
     private function getReportData(string $type): array

@@ -123,7 +123,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach (array_slice($accounts, 0, 6) as $account): ?>
+                                    <?php 
+                                    $activeWealthAccounts = array_filter($accounts, fn($a) => (float)$a['balance'] > 0);
+                                    foreach (array_slice($activeWealthAccounts, 0, 6) as $account): 
+                                    ?>
                                         <tr>
                                             <td class="px-0 py-2">
                                                 <div class="fw-bold text-dark d-flex align-items-center">
