@@ -64,20 +64,44 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
         </div>
         <div class="col-md-3">
             <label class="form-label">Cuenta origen</label>
-            <select class="form-select" name="account_origin_id" required>
-                <?php foreach ($accounts as $account): ?>
-                    <option value="<?= (int)$account['id'] ?>" <?= (!empty($movement['account_origin_id']) && (int)$movement['account_origin_id'] === (int)$account['id']) ? 'selected' : '' ?>><?= e($account['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+                <select class="form-select" name="account_origin_id" id="account_origin_id" required>
+                    <?php foreach ($accounts as $account): ?>
+                        <option value="<?= (int)$account['id'] ?>" 
+                                data-balance="<?= e((string)$account['balance']) ?>"
+                                data-currency="<?= e($account['currency']) ?>"
+                                <?= (!empty($movement['account_origin_id']) && (int)$movement['account_origin_id'] === (int)$account['id']) ? 'selected' : '' ?>>
+                            <?= e($account['name']) ?> (<?= format_money((float)$account['balance'], $account['currency']) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn btn-outline-secondary" type="button" onclick="openAccountSearch('account_origin_id')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="col-md-3">
             <label class="form-label">Cuenta destino (opcional)</label>
-            <select class="form-select" name="account_dest_id">
-                <option value="">-</option>
-                <?php foreach ($accounts as $account): ?>
-                    <option value="<?= (int)$account['id'] ?>" <?= (!empty($movement['account_dest_id']) && (int)$movement['account_dest_id'] === (int)$account['id']) ? 'selected' : '' ?>><?= e($account['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+                <select class="form-select" name="account_dest_id" id="account_dest_id">
+                    <option value="">-</option>
+                    <?php foreach ($accounts as $account): ?>
+                        <option value="<?= (int)$account['id'] ?>" 
+                                data-balance="<?= e((string)$account['balance']) ?>"
+                                data-currency="<?= e($account['currency']) ?>"
+                                <?= (!empty($movement['account_dest_id']) && (int)$movement['account_dest_id'] === (int)$account['id']) ? 'selected' : '' ?>>
+                            <?= e($account['name']) ?> (<?= format_money((float)$account['balance'], $account['currency']) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn btn-outline-secondary" type="button" onclick="openAccountSearch('account_dest_id')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="col-md-3">
             <label class="form-label">Categoria</label>
@@ -128,7 +152,77 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
         <a class="btn btn-outline-secondary" href="?module=movements">Cancelar</a>
     </div>
 </form>
+
+<!-- Modal de búsqueda de cuentas -->
+<div class="modal fade" id="accountSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buscar cuenta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="accountSearchInput" class="form-control mb-3" placeholder="Buscar por nombre...">
+                <div class="list-group" id="accountSearchList">
+                    <?php foreach ($accounts as $account): ?>
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center account-search-item" 
+                                data-id="<?= (int)$account['id'] ?>" 
+                                data-name="<?= e($account['name']) ?>">
+                            <span>
+                                <strong><?= e($account['name']) ?></strong>
+                                <br>
+                                <small class="text-muted"><?= e($account['type']) ?> - <?= e($account['purpose']) ?></small>
+                            </span>
+                            <span class="badge bg-primary rounded-pill">
+                                <?= format_money((float)$account['balance'], $account['currency']) ?>
+                            </span>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+let activeTargetSelectId = null;
+const accountSearchModal = new bootstrap.Modal(document.getElementById('accountSearchModal'));
+const accountSearchInput = document.getElementById('accountSearchInput');
+const accountSearchItems = document.querySelectorAll('.account-search-item');
+
+function openAccountSearch(targetId) {
+    activeTargetSelectId = targetId;
+    accountSearchInput.value = '';
+    filterAccounts('');
+    accountSearchModal.show();
+    setTimeout(() => accountSearchInput.focus(), 500);
+}
+
+function filterAccounts(query) {
+    const q = query.toLowerCase();
+    accountSearchItems.forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        item.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+
+accountSearchInput.addEventListener('input', (e) => {
+    filterAccounts(e.target.value);
+});
+
+accountSearchItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const accountId = item.dataset.id;
+        const targetSelect = document.getElementById(activeTargetSelectId);
+        if (targetSelect) {
+            targetSelect.value = accountId;
+            // Disparar evento change por si hay listeners
+            targetSelect.dispatchEvent(new Event('change'));
+        }
+        accountSearchModal.hide();
+    });
+});
+
 (() => {
     const select = document.getElementById('fixedExpenseSelect');
     if (!select) {

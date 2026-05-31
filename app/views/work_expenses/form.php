@@ -15,7 +15,9 @@ $isEdit = !empty($item);
             <label class="form-label">Cuenta</label>
             <select class="form-select" name="account_id">
                 <?php foreach ($accounts as $account): ?>
-                    <option value="<?= (int)$account['id'] ?>" <?= (!empty($item['account_id']) && (int)$item['account_id'] === (int)$account['id']) ? 'selected' : '' ?>><?= e($account['name']) ?></option>
+                    <option value="<?= (int)$account['id'] ?>" <?= (!empty($item['account_id']) && (int)$item['account_id'] === (int)$account['id']) ? 'selected' : '' ?>>
+                        <?= e($account['name']) ?> (<?= format_money((float)$account['balance'], $account['currency']) ?>)
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>
