@@ -269,6 +269,34 @@ class Movement
         }
     }
 
+    private static function applyBalance(array $data): void
+    {
+        $amount = (float)$data['amount'];
+        $type = $data['type'];
+
+        if ($type === 'ingreso') {
+            Account::adjustBalance((int)$data['account_origin_id'], $amount);
+            return;
+        }
+
+        if ($type === 'gasto' || $type === 'gasto_laboral') {
+            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            return;
+        }
+
+        if ($type === 'transferencia') {
+            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            if (!empty($data['account_dest_id'])) {
+                Account::adjustBalance((int)$data['account_dest_id'], $amount);
+            }
+            return;
+        }
+
+        if ($type === 'ajuste') {
+            Account::adjustBalance((int)$data['account_origin_id'], $amount);
+        }
+    }
+
     public static function monthlyExpenses(string $month): float
     {
         $db = Database::getConnection();
