@@ -248,44 +248,27 @@ class Movement
         $applyTax = (bool)($movement['apply_dgii_tax'] ?? false);
         $customRate = !empty($movement['exchange_rate']) ? (float)$movement['exchange_rate'] : null;
 
-        // Origin balance adjustment
-        $originAdjAmount = $amount;
-        if ($movCurrency !== $originAccount['currency']) {
-            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
-        }
+        // 1. Reverse Origin Account
+        $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
 
         if ($type === 'ingreso') {
             Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
-            return;
-        }
-
-        if ($type === 'gasto' || $type === 'gasto_laboral') {
+        } else {
+            // It was a Gasto, Gasto Laboral, Transferencia or Ajuste
+            // If it was an adjustment, amount could be negative
             Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
+            
+            // Reverse Tax if applied (only for outgoing)
             if ($applyTax) {
                 $tax = abs($originAdjAmount) * 0.0015;
                 Account::adjustBalance((int)$originAccount['id'], $tax);
             }
-            return;
         }
 
-        if ($type === 'transferencia') {
-            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
-            if ($applyTax) {
-                $tax = abs($originAdjAmount) * 0.0015;
-                Account::adjustBalance((int)$originAccount['id'], $tax);
-            }
-            if ($destAccount) {
-                $destAdjAmount = $amount;
-                if ($movCurrency !== $destAccount['currency']) {
-                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
-                }
-                Account::adjustBalance((int)$destAccount['id'], -$destAdjAmount);
-            }
-            return;
-        }
-
-        if ($type === 'ajuste') {
-            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
+        // 2. Reverse Destination Account (if it was a transfer)
+        if ($destAccount) {
+            $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
+            Account::adjustBalance((int)$destAccount['id'], -$destAdjAmount);
         }
     }
 
@@ -300,44 +283,26 @@ class Movement
         $applyTax = (bool)($data['apply_dgii_tax'] ?? false);
         $customRate = !empty($data['exchange_rate']) ? (float)$data['exchange_rate'] : null;
 
-        // Origin balance adjustment
-        $originAdjAmount = $amount;
-        if ($movCurrency !== $originAccount['currency']) {
-            $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
-        }
+        // 1. Apply to Origin Account
+        $originAdjAmount = convert_currency($amount, $movCurrency, $originAccount['currency'], $customRate);
 
         if ($type === 'ingreso') {
             Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
-            return;
-        }
-
-        if ($type === 'gasto' || $type === 'gasto_laboral') {
+        } else {
+            // Gasto, Gasto Laboral, Transferencia or Ajuste
             Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
+            
+            // Apply Tax (only for outgoing)
             if ($applyTax) {
                 $tax = abs($originAdjAmount) * 0.0015;
                 Account::adjustBalance((int)$originAccount['id'], -$tax);
             }
-            return;
         }
 
-        if ($type === 'transferencia') {
-            Account::adjustBalance((int)$originAccount['id'], -$originAdjAmount);
-            if ($applyTax) {
-                $tax = abs($originAdjAmount) * 0.0015;
-                Account::adjustBalance((int)$originAccount['id'], -$tax);
-            }
-            if ($destAccount) {
-                $destAdjAmount = $amount;
-                if ($movCurrency !== $destAccount['currency']) {
-                    $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
-                }
-                Account::adjustBalance((int)$destAccount['id'], $destAdjAmount);
-            }
-            return;
-        }
-
-        if ($type === 'ajuste') {
-            Account::adjustBalance((int)$originAccount['id'], $originAdjAmount);
+        // 2. Apply to Destination Account (if present, effectively a transfer)
+        if ($destAccount) {
+            $destAdjAmount = convert_currency($amount, $movCurrency, $destAccount['currency'], $customRate);
+            Account::adjustBalance((int)$destAccount['id'], $destAdjAmount);
         }
     }
 
