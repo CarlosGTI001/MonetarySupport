@@ -38,10 +38,10 @@ class Movement
         try {
             $stmt = $db->prepare('
                 INSERT INTO movements (
-                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, financing_id, type, category, concept, amount, currency,
+                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, financing_id, apply_dgii_tax, type, category, concept, amount, currency,
                     reimbursable, reimbursed, note
                 ) VALUES (
-                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :financing_id, :type, :category, :concept, :amount, :currency,
+                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :financing_id, :apply_dgii_tax, :type, :category, :concept, :amount, :currency,
                     :reimbursable, :reimbursed, :note
                 )
             ');
@@ -52,6 +52,7 @@ class Movement
                 'fixed_expense_id' => $data['fixed_expense_id'],
                 'savings_rule_id' => $data['savings_rule_id'],
                 'financing_id' => $data['financing_id'] ?? null,
+                'apply_dgii_tax' => $data['apply_dgii_tax'] ?? 0,
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],
@@ -241,6 +242,7 @@ class Movement
             'account_dest_id' => $movement['account_dest_id'],
             'type' => $movement['type'],
             'amount' => (float)$movement['amount'],
+            'apply_dgii_tax' => (bool)($movement['apply_dgii_tax'] ?? false),
         ];
 
         $amount = (float)$data['amount'];
@@ -253,11 +255,19 @@ class Movement
 
         if ($type === 'gasto' || $type === 'gasto_laboral') {
             Account::adjustBalance((int)$data['account_origin_id'], $amount);
+            if ($data['apply_dgii_tax']) {
+                $tax = abs($amount) * 0.0015;
+                Account::adjustBalance((int)$data['account_origin_id'], $tax);
+            }
             return;
         }
 
         if ($type === 'transferencia') {
             Account::adjustBalance((int)$data['account_origin_id'], $amount);
+            if ($data['apply_dgii_tax']) {
+                $tax = abs($amount) * 0.0015;
+                Account::adjustBalance((int)$data['account_origin_id'], $tax);
+            }
             if (!empty($data['account_dest_id'])) {
                 Account::adjustBalance((int)$data['account_dest_id'], -$amount);
             }
@@ -273,6 +283,7 @@ class Movement
     {
         $amount = (float)$data['amount'];
         $type = $data['type'];
+        $applyTax = (bool)($data['apply_dgii_tax'] ?? false);
 
         if ($type === 'ingreso') {
             Account::adjustBalance((int)$data['account_origin_id'], $amount);
@@ -281,11 +292,19 @@ class Movement
 
         if ($type === 'gasto' || $type === 'gasto_laboral') {
             Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            if ($applyTax) {
+                $tax = abs($amount) * 0.0015;
+                Account::adjustBalance((int)$data['account_origin_id'], -$tax);
+            }
             return;
         }
 
         if ($type === 'transferencia') {
             Account::adjustBalance((int)$data['account_origin_id'], -$amount);
+            if ($applyTax) {
+                $tax = abs($amount) * 0.0015;
+                Account::adjustBalance((int)$data['account_origin_id'], -$tax);
+            }
             if (!empty($data['account_dest_id'])) {
                 Account::adjustBalance((int)$data['account_dest_id'], $amount);
             }

@@ -52,6 +52,7 @@ class Database
         self::ensureColumn($pdo, 'movements', 'fixed_expense_id', 'INTEGER');
         self::ensureColumn($pdo, 'movements', 'savings_rule_id', 'INTEGER');
         self::ensureColumn($pdo, 'movements', 'financing_id', 'INTEGER');
+        self::ensureColumn($pdo, 'movements', 'apply_dgii_tax', 'INTEGER DEFAULT 0');
         self::ensureColumn($pdo, 'savings_rules', 'frequency', "TEXT DEFAULT 'per_income'");
         $pdo->exec("UPDATE savings_rules SET frequency = 'per_income' WHERE frequency IS NULL OR frequency = ''");
     }

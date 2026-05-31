@@ -130,6 +130,17 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
                     </div>
                 </div>
 
+                <!-- Sección: Impuesto DGII (RD) -->
+                <div class="col-12 col-md-4 d-flex align-items-center mt-md-4" id="dgiiTaxField">
+                    <div class="form-check form-switch p-3 border rounded bg-light bg-opacity-50">
+                        <input class="form-check-input" type="checkbox" name="apply_dgii_tax" id="apply_dgii_tax" value="1">
+                        <label class="form-check-label fw-bold small text-uppercase text-danger" for="apply_dgii_tax">
+                            <i class="bi bi-percent me-1"></i> Impuesto DGII (0.15%)
+                        </label>
+                        <div class="x-small text-muted mt-1">Aplica para transferencias a terceros en RD.</div>
+                    </div>
+                </div>
+
                 <div class="col-12">
                     <label class="form-label fw-bold small text-uppercase">Nota adicional</label>
                     <textarea class="form-control" name="note" rows="3" placeholder="Detalles adicionales opcionales..."><?= e($movement['note'] ?? '') ?></textarea>
@@ -324,16 +335,29 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
 
     const typeSelect = document.getElementById('movementType');
     const adjustField = document.getElementById('adjustField');
-    const toggleAdjust = () => {
-        if (!typeSelect || !adjustField) return;
-        const show = typeSelect.value === 'ajuste';
-        adjustField.style.display = show ? '' : 'none';
-        const adjustSelect = adjustField.querySelector('select');
-        if (adjustSelect) adjustSelect.disabled = !show;
+    const dgiiField = document.getElementById('dgiiTaxField');
+    
+    const toggleFields = () => {
+        if (!typeSelect) return;
+        const type = typeSelect.value;
+        
+        // Ajuste logic
+        if (adjustField) {
+            const showAdjust = type === 'ajuste';
+            adjustField.style.display = showAdjust ? '' : 'none';
+            const adjustSelect = adjustField.querySelector('select');
+            if (adjustSelect) adjustSelect.disabled = !showAdjust;
+        }
+
+        // DGII logic
+        if (dgiiField) {
+            const showDgii = (type === 'gasto' || type === 'transferencia' || type === 'gasto_laboral');
+            dgiiField.style.display = showDgii ? '' : 'none';
+        }
     };
     if (typeSelect) {
-        typeSelect.addEventListener('change', toggleAdjust);
-        toggleAdjust();
+        typeSelect.addEventListener('change', toggleFields);
+        toggleFields();
     }
 })();
 </script>
