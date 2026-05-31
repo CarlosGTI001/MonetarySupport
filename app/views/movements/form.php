@@ -133,7 +133,7 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
                 <!-- Sección: Impuesto DGII (RD) -->
                 <div class="col-12 col-md-4 d-flex align-items-center mt-md-4" id="dgiiTaxField">
                     <div class="form-check form-switch p-3 border rounded bg-light bg-opacity-50">
-                        <input class="form-check-input" type="checkbox" name="apply_dgii_tax" id="apply_dgii_tax" value="1">
+                        <input class="form-check-input" type="checkbox" name="apply_dgii_tax" id="apply_dgii_tax" value="1" <?= (!empty($movement['apply_dgii_tax'])) ? 'checked' : '' ?>>
                         <label class="form-check-label fw-bold small text-uppercase text-danger" for="apply_dgii_tax">
                             <i class="bi bi-percent me-1"></i> Impuesto DGII (0.15%)
                         </label>
@@ -329,6 +329,16 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
             const noteField = document.querySelector('[name="note"]');
             if (noteField && !noteField.value && option.dataset.note) {
                 noteField.value = option.dataset.note;
+            }
+        });
+    }
+
+    const destSelect = document.getElementById('account_dest_id');
+    if (destSelect) {
+        destSelect.addEventListener('change', () => {
+            if (destSelect.value !== '' && typeSelect.value === 'gasto') {
+                typeSelect.value = 'transferencia';
+                toggleFields();
             }
         });
     }

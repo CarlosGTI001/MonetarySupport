@@ -172,6 +172,10 @@ class MovementsController extends Controller
             'date' => current_date(),
             'account_origin_id' => (int)$fixedExpense['account_id'],
             'account_dest_id' => null,
+            'fixed_expense_id' => (int)$fixedExpense['id'],
+            'savings_rule_id' => null,
+            'financing_id' => null,
+            'apply_dgii_tax' => 0,
             'type' => 'gasto',
             'category' => 'Gasto fijo',
             'concept' => $fixedExpense['name'],
@@ -180,7 +184,6 @@ class MovementsController extends Controller
             'reimbursable' => 0,
             'reimbursed' => 0,
             'note' => $fixedExpense['note'] ?? '',
-            'fixed_expense_id' => (int)$fixedExpense['id'],
         ];
         Movement::create($movement);
         redirect('?module=movements');
@@ -222,6 +225,7 @@ class MovementsController extends Controller
             'note' => trim($data['note'] ?? ''),
             'fixed_expense_id' => !empty($data['fixed_expense_id']) ? (int)$data['fixed_expense_id'] : null,
             'financing_id' => !empty($data['financing_id']) ? (int)$data['financing_id'] : null,
+            'apply_dgii_tax' => !empty($data['apply_dgii_tax']) ? 1 : 0,
         ];
     }
 

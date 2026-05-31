@@ -102,6 +102,13 @@
                                         <div class="fw-bold <?= $amountClass ?> fs-5">
                                             <?= $prefix . format_money(abs((float)$movement['amount']), $movement['currency']) ?>
                                         </div>
+                                        <?php if (!empty($movement['apply_dgii_tax'])): 
+                                            $taxAmount = abs((float)$movement['amount']) * 0.0015;
+                                        ?>
+                                            <div class="text-danger x-small fw-bold">
+                                                <i class="bi bi-percent"></i> Tax: <?= format_money($taxAmount, $movement['currency']) ?>
+                                            </div>
+                                        <?php endif; ?>
                                         <div class="dropdown">
                                             <button class="btn btn-link btn-sm text-muted p-0 border-0" type="button" data-bs-toggle="dropdown">
                                                 <i class="bi bi-three-dots"></i>
