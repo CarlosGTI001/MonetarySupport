@@ -186,7 +186,7 @@ class MovementsController extends Controller
         redirect('?module=movements');
     }
 
-    public function update(): void
+    public function save(): void
     {
         $id = (int)($_POST['id'] ?? 0);
         Movement::update($id, $this->sanitize($_POST));

@@ -20,7 +20,7 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
 
 <div class="card shadow-sm mb-5">
     <div class="card-body p-4">
-        <form method="post" action="?module=movements&action=<?= $isEdit ? 'update' : 'store' ?>">
+        <form method="post" action="?module=movements&action=<?= $isEdit ? 'save' : 'store' ?>">
             <?php if ($isEdit): ?>
                 <input type="hidden" name="id" value="<?= (int)$movement['id'] ?>">
             <?php endif; ?>
