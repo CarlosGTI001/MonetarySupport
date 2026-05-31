@@ -40,6 +40,29 @@ class MovementsController extends Controller
         $savingsRules = SavingsRule::fixedActive();
         $movement = null;
 
+        if (!empty($_GET['financing_id'])) {
+            $db = \App\Core\Database::getConnection();
+            $stmt = $db->prepare('SELECT * FROM financings WHERE id = :id');
+            $stmt->execute(['id' => (int)$_GET['financing_id']]);
+            $financing = $stmt->fetch();
+            if ($financing) {
+                $movement = [
+                    'date' => current_date(),
+                    'account_origin_id' => null,
+                    'account_dest_id' => null,
+                    'type' => 'gasto',
+                    'category' => 'Financiamiento',
+                    'concept' => 'Pago ' . $financing['name'],
+                    'amount' => (float)$financing['installment_amount'],
+                    'currency' => 'DOP',
+                    'reimbursable' => 0,
+                    'reimbursed' => 0,
+                    'note' => '',
+                    'financing_id' => (int)$financing['id'],
+                ];
+            }
+        }
+
         if (!empty($_GET['fixed_expense_id'])) {
             $fixedExpense = FixedExpense::find((int)$_GET['fixed_expense_id']);
             if ($fixedExpense) {
@@ -198,6 +221,7 @@ class MovementsController extends Controller
             'reimbursed' => isset($data['reimbursed']) ? 1 : 0,
             'note' => trim($data['note'] ?? ''),
             'fixed_expense_id' => !empty($data['fixed_expense_id']) ? (int)$data['fixed_expense_id'] : null,
+            'financing_id' => !empty($data['financing_id']) ? (int)$data['financing_id'] : null,
         ];
     }
 

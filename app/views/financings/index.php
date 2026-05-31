@@ -87,7 +87,7 @@
             </div>
             <?php if (!$isOver): ?>
             <div class="card-footer bg-light border-0 p-0">
-                <a href="?module=movements&action=create&concept=Pago <?= e($item['name']) ?>&amount=<?= (float)$item['installment_amount'] ?>&type=gasto&category=Financiamiento" 
+                <a href="?module=movements&action=create&financing_id=<?= (int)$item['id'] ?>" 
                    class="btn btn-primary w-100 rounded-0 py-2 fw-bold">
                    Registrar Pago
                 </a>

@@ -24,6 +24,9 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
             <?php if ($isEdit): ?>
                 <input type="hidden" name="id" value="<?= (int)$movement['id'] ?>">
             <?php endif; ?>
+            <?php if (!empty($movement['financing_id'])): ?>
+                <input type="hidden" name="financing_id" value="<?= (int)$movement['financing_id'] ?>">
+            <?php endif; ?>
             
             <div class="row g-4">
                 <div class="col-12 col-md-6 col-lg-3">

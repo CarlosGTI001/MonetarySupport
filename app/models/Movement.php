@@ -38,10 +38,10 @@ class Movement
         try {
             $stmt = $db->prepare('
                 INSERT INTO movements (
-                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, type, category, concept, amount, currency,
+                    date, account_origin_id, account_dest_id, fixed_expense_id, savings_rule_id, financing_id, type, category, concept, amount, currency,
                     reimbursable, reimbursed, note
                 ) VALUES (
-                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :type, :category, :concept, :amount, :currency,
+                    :date, :account_origin_id, :account_dest_id, :fixed_expense_id, :savings_rule_id, :financing_id, :type, :category, :concept, :amount, :currency,
                     :reimbursable, :reimbursed, :note
                 )
             ');
@@ -51,6 +51,7 @@ class Movement
                 'account_dest_id' => $data['account_dest_id'],
                 'fixed_expense_id' => $data['fixed_expense_id'],
                 'savings_rule_id' => $data['savings_rule_id'],
+                'financing_id' => $data['financing_id'] ?? null,
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],
@@ -62,6 +63,11 @@ class Movement
             ]);
 
             self::applyBalance($data);
+            
+            if (!empty($data['financing_id'])) {
+                self::applyFinancingPayment((int)$data['financing_id'], (float)$data['amount']);
+            }
+
             $db->commit();
             return (int)$db->lastInsertId();
         } catch (Throwable $e) {
@@ -70,32 +76,40 @@ class Movement
         }
     }
 
-    private static function applyBalance(array $data): void
+    private static function applyFinancingPayment(int $financingId, float $amount): void
     {
-        $amount = (float)$data['amount'];
-        $type = $data['type'];
+        $db = Database::getConnection();
+        $stmt = $db->prepare('SELECT * FROM financings WHERE id = :id');
+        $stmt->execute(['id' => $financingId]);
+        $f = $stmt->fetch();
+        if (!$f) return;
 
-        if ($type === 'ingreso') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
-            return;
-        }
-
-        if ($type === 'gasto' || $type === 'gasto_laboral') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
-            return;
-        }
-
-        if ($type === 'transferencia') {
-            Account::adjustBalance((int)$data['account_origin_id'], -$amount);
-            if (!empty($data['account_dest_id'])) {
-                Account::adjustBalance((int)$data['account_dest_id'], $amount);
+        $newPaymentsMade = (int)$f['payments_made'] + 1;
+        $newTotalPaid = (float)$f['total_paid'] + abs($amount);
+        $newTotalPending = max(0, (float)$f['total_pending'] - abs($amount));
+        
+        $nextDate = $f['next_date'];
+        if ($nextDate) {
+            if ($f['frequency'] === 'monthly') {
+                $nextDate = date('Y-m-d', strtotime($nextDate . ' +1 month'));
+            } elseif ($f['frequency'] === 'biweekly') {
+                $nextDate = date('Y-m-d', strtotime($nextDate . ' +14 days'));
             }
-            return;
         }
 
-        if ($type === 'ajuste') {
-            Account::adjustBalance((int)$data['account_origin_id'], $amount);
-        }
+        $stmt = $db->prepare('
+            UPDATE financings 
+            SET payments_made = :pm, total_paid = :tp, total_pending = :tpe, next_date = :nd,
+                status = CASE WHEN :pm >= total_payments THEN "pagado" ELSE status END
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'pm' => $newPaymentsMade,
+            'tp' => $newTotalPaid,
+            'tpe' => $newTotalPending,
+            'nd' => $nextDate,
+            'id' => $financingId
+        ]);
     }
 
     public static function delete(int $id): void
@@ -109,6 +123,11 @@ class Movement
         $db->beginTransaction();
         try {
             self::reverseBalance($movement);
+            
+            if (!empty($movement['financing_id'])) {
+                self::reverseFinancingPayment((int)$movement['financing_id'], (float)$movement['amount']);
+            }
+
             $stmt = $db->prepare('DELETE FROM movements WHERE id = :id');
             $stmt->execute(['id' => $id]);
             $db->commit();
@@ -116,6 +135,42 @@ class Movement
             $db->rollBack();
             throw $e;
         }
+    }
+
+    private static function reverseFinancingPayment(int $financingId, float $amount): void
+    {
+        $db = Database::getConnection();
+        $stmt = $db->prepare('SELECT * FROM financings WHERE id = :id');
+        $stmt->execute(['id' => $financingId]);
+        $f = $stmt->fetch();
+        if (!$f) return;
+
+        $newPaymentsMade = max(0, (int)$f['payments_made'] - 1);
+        $newTotalPaid = max(0, (float)$f['total_paid'] - abs($amount));
+        $newTotalPending = (float)$f['total_pending'] + abs($amount);
+        
+        $prevDate = $f['next_date'];
+        if ($prevDate) {
+            if ($f['frequency'] === 'monthly') {
+                $prevDate = date('Y-m-d', strtotime($prevDate . ' -1 month'));
+            } elseif ($f['frequency'] === 'biweekly') {
+                $prevDate = date('Y-m-d', strtotime($prevDate . ' -14 days'));
+            }
+        }
+
+        $stmt = $db->prepare('
+            UPDATE financings 
+            SET payments_made = :pm, total_paid = :tp, total_pending = :tpe, next_date = :nd,
+                status = CASE WHEN :pm < total_payments THEN "activo" ELSE status END
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'pm' => $newPaymentsMade,
+            'tp' => $newTotalPaid,
+            'tpe' => $newTotalPending,
+            'nd' => $prevDate,
+            'id' => $financingId
+        ]);
     }
 
     public static function update(int $id, array $data): void
@@ -129,6 +184,10 @@ class Movement
         $db->beginTransaction();
         try {
             self::reverseBalance($existing);
+            if (!empty($existing['financing_id'])) {
+                self::reverseFinancingPayment((int)$existing['financing_id'], (float)$existing['amount']);
+            }
+
             $stmt = $db->prepare('
                 UPDATE movements
                 SET date = :date,
@@ -136,6 +195,7 @@ class Movement
                     account_dest_id = :account_dest_id,
                     fixed_expense_id = :fixed_expense_id,
                     savings_rule_id = :savings_rule_id,
+                    financing_id = :financing_id,
                     type = :type,
                     category = :category,
                     concept = :concept,
@@ -153,6 +213,7 @@ class Movement
                 'account_dest_id' => $data['account_dest_id'],
                 'fixed_expense_id' => $data['fixed_expense_id'],
                 'savings_rule_id' => $data['savings_rule_id'],
+                'financing_id' => $data['financing_id'] ?? null,
                 'type' => $data['type'],
                 'category' => $data['category'],
                 'concept' => $data['concept'],
@@ -163,6 +224,9 @@ class Movement
                 'note' => $data['note'],
             ]);
             self::applyBalance($data);
+            if (!empty($data['financing_id'])) {
+                self::applyFinancingPayment((int)$data['financing_id'], (float)$data['amount']);
+            }
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
