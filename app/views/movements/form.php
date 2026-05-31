@@ -100,6 +100,41 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
                     </div>
                 </div>
 
+                <!-- Sección: Calculadora de Conversión (Dinámica) -->
+                <div class="col-12" id="currencyCalculator" style="display: none;">
+                    <div class="card border-primary border-opacity-25 bg-primary bg-opacity-10 shadow-none mb-2">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-calculator fs-5 me-2 text-primary"></i>
+                                <h6 class="fw-bold mb-0 text-primary">Calculadora de Conversión</h6>
+                                <span class="badge bg-white text-primary border ms-auto">1 USD = <?= number_format(get_exchange_rate(), 2) ?> DOP</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white fw-bold" id="calcSourceLabel">DOP</span>
+                                        <input type="number" step="0.01" id="calcSourceAmount" class="form-control" placeholder="Monto a enviar">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-2 text-center align-self-center">
+                                    <i class="bi bi-arrow-left-right text-muted"></i>
+                                </div>
+                                <div class="col-12 col-md-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white fw-bold" id="calcTargetLabel">USD</span>
+                                        <input type="number" step="0.01" id="calcTargetAmount" class="form-control" placeholder="Monto a recibir">
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <button type="button" id="applyCalcAmount" class="btn btn-sm btn-primary w-100 fw-bold">
+                                        USAR ESTE MONTO EN EL FORMULARIO
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12 col-md-4">
                     <label class="form-label fw-bold small text-uppercase">Categoría</label>
                     <input class="form-control" name="category" value="<?= e($movement['category'] ?? '') ?>" placeholder="Ej: Comida, Transporte...">
@@ -346,10 +381,21 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
     const typeSelect = document.getElementById('movementType');
     const adjustField = document.getElementById('adjustField');
     const dgiiField = document.getElementById('dgiiTaxField');
-    
+    const calcField = document.getElementById('currencyCalculator');
+    const exchangeRate = <?= get_exchange_rate() ?>;
+
+    const getAccountCurrency = (selectId) => {
+        const sel = document.getElementById(selectId);
+        if (!sel || sel.selectedIndex < 0) return null;
+        return sel.options[sel.selectedIndex].dataset.currency;
+    };
+
     const toggleFields = () => {
         if (!typeSelect) return;
         const type = typeSelect.value;
+        const movCurrency = document.querySelector('[name="currency"]').value;
+        const originCurrency = getAccountCurrency('account_origin_id');
+        const destCurrency = getAccountCurrency('account_dest_id');
         
         // Ajuste logic
         if (adjustField) {
@@ -364,9 +410,62 @@ if (!empty($movement) && ($movement['type'] ?? '') === 'ajuste') {
             const showDgii = (type === 'gasto' || type === 'transferencia' || type === 'gasto_laboral');
             dgiiField.style.display = showDgii ? '' : 'none';
         }
+
+        // Calculator logic
+        if (calcField) {
+            const isTransfer = type === 'transferencia' && destCurrency;
+            const isCrossCurrency = (originCurrency && originCurrency !== movCurrency) || 
+                                    (destCurrency && destCurrency !== movCurrency) ||
+                                    (originCurrency && destCurrency && originCurrency !== destCurrency);
+            
+            if (isCrossCurrency || isTransfer) {
+                calcField.style.display = '';
+                document.getElementById('calcSourceLabel').textContent = originCurrency || 'DOP';
+                document.getElementById('calcTargetLabel').textContent = destCurrency || movCurrency;
+            } else {
+                calcField.style.display = 'none';
+            }
+        }
     };
+
+    // Calculator Live Logic
+    const srcInput = document.getElementById('calcSourceAmount');
+    const targetInput = document.getElementById('calcTargetAmount');
+    const mainAmountInput = document.querySelector('[name="amount"]');
+
+    srcInput.addEventListener('input', () => {
+        const srcCur = document.getElementById('calcSourceLabel').textContent;
+        const tarCur = document.getElementById('calcTargetLabel').textContent;
+        if (srcCur === 'DOP' && tarCur === 'USD') targetInput.value = (srcInput.value / exchangeRate).toFixed(2);
+        else if (srcCur === 'USD' && tarCur === 'DOP') targetInput.value = (srcInput.value * exchangeRate).toFixed(2);
+        else targetInput.value = srcInput.value;
+    });
+
+    targetInput.addEventListener('input', () => {
+        const srcCur = document.getElementById('calcSourceLabel').textContent;
+        const tarCur = document.getElementById('calcTargetLabel').textContent;
+        if (tarCur === 'DOP' && srcCur === 'USD') srcInput.value = (targetInput.value / exchangeRate).toFixed(2);
+        else if (tarCur === 'USD' && srcCur === 'DOP') srcInput.value = (targetInput.value * exchangeRate).toFixed(2);
+        else srcInput.value = targetInput.value;
+    });
+
+    document.getElementById('applyCalcAmount').addEventListener('click', () => {
+        const movCurrency = document.querySelector('[name="currency"]').value;
+        const tarCur = document.getElementById('calcTargetLabel').textContent;
+        const srcCur = document.getElementById('calcSourceLabel').textContent;
+        
+        // If movement currency is same as target, use target value. Else use source.
+        if (movCurrency === tarCur) mainAmountInput.value = targetInput.value;
+        else mainAmountInput.value = srcInput.value;
+        
+        mainAmountInput.dispatchEvent(new Event('input'));
+    });
+
     if (typeSelect) {
         typeSelect.addEventListener('change', toggleFields);
+        document.getElementById('account_origin_id').addEventListener('change', toggleFields);
+        document.getElementById('account_dest_id').addEventListener('change', toggleFields);
+        document.querySelector('[name="currency"]').addEventListener('change', toggleFields);
         toggleFields();
     }
 })();
