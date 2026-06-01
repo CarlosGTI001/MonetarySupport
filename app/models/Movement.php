@@ -34,7 +34,10 @@ class Movement
     public static function create(array $data): int
     {
         $db = Database::getConnection();
-        $db->beginTransaction();
+        $mustCommit = !$db->inTransaction();
+        if ($mustCommit) {
+            $db->beginTransaction();
+        }
         try {
             $stmt = $db->prepare('
                 INSERT INTO movements (
@@ -70,10 +73,14 @@ class Movement
                 self::applyFinancingPayment((int)$data['financing_id'], (float)$data['amount']);
             }
 
-            $db->commit();
+            if ($mustCommit) {
+                $db->commit();
+            }
             return (int)$db->lastInsertId();
         } catch (Throwable $e) {
-            $db->rollBack();
+            if ($mustCommit) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -122,7 +129,10 @@ class Movement
             return;
         }
 
-        $db->beginTransaction();
+        $mustCommit = !$db->inTransaction();
+        if ($mustCommit) {
+            $db->beginTransaction();
+        }
         try {
             self::reverseBalance($movement);
             
@@ -132,9 +142,14 @@ class Movement
 
             $stmt = $db->prepare('DELETE FROM movements WHERE id = :id');
             $stmt->execute(['id' => $id]);
-            $db->commit();
+            
+            if ($mustCommit) {
+                $db->commit();
+            }
         } catch (Throwable $e) {
-            $db->rollBack();
+            if ($mustCommit) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
@@ -183,7 +198,10 @@ class Movement
             return;
         }
 
-        $db->beginTransaction();
+        $mustCommit = !$db->inTransaction();
+        if ($mustCommit) {
+            $db->beginTransaction();
+        }
         try {
             self::reverseBalance($existing);
             if (!empty($existing['financing_id'])) {
@@ -229,9 +247,14 @@ class Movement
             if (!empty($data['financing_id'])) {
                 self::applyFinancingPayment((int)$data['financing_id'], (float)$data['amount']);
             }
-            $db->commit();
+            
+            if ($mustCommit) {
+                $db->commit();
+            }
         } catch (Throwable $e) {
-            $db->rollBack();
+            if ($mustCommit) {
+                $db->rollBack();
+            }
             throw $e;
         }
     }
