@@ -30,7 +30,7 @@ $isEdit = !empty($item);
             <input class="form-control" type="number" step="any" name="amount" value="<?= e((string)($item['amount'] ?? 0)) ?>">
         </div>
         <div class="col-md-6">
-            <label class="form-label">Proyecto/Motivo</label>
+            <label class="form-label">Transporte</label>
             <input class="form-control" name="project" value="<?= e($item['project'] ?? '') ?>">
         </div>
         <div class="col-md-3 d-flex align-items-end">

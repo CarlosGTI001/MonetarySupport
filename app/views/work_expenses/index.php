@@ -52,7 +52,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr class="text-muted small text-uppercase">
-                        <th class="border-0 ps-4 py-3" style="font-size: 0.65rem;">Gasto / Proyecto</th>
+                        <th class="border-0 ps-4 py-3" style="font-size: 0.65rem;">Concepto / Transporte</th>
                         <th class="border-0 py-3" style="font-size: 0.65rem;">Fecha & Cuenta</th>
                         <th class="border-0 text-end py-3" style="font-size: 0.65rem;">Monto</th>
                         <th class="border-0 text-center py-3" style="font-size: 0.65rem;">Estado</th>
@@ -66,7 +66,7 @@
                     <tr>
                         <td class="ps-4 py-3">
                             <div class="fw-bold text-dark"><?= e($item['concept']) ?></div>
-                            <div class="text-muted x-small text-uppercase"><i class="bi bi-tag me-1"></i><?= e($item['project'] ?: 'Sin Proyecto') ?></div>
+                            <div class="text-muted x-small text-uppercase"><i class="bi bi-tag me-1"></i><?= e($item['project'] ?: 'Sin Transporte') ?></div>
                         </td>
                         <td class="py-3">
                             <div class="small text-dark"><?= e($item['date']) ?></div>
