@@ -284,16 +284,16 @@ class ReportsController extends Controller
                                         $date = htmlspecialchars((string)$row[2], ENT_QUOTES, 'UTF-8');
                                         $amount = (float)$row[3];
                                         
-                                        $middle .= '<c r="A' . $rowIdx . '" s="11" t="inlineStr"><is><t>' . $concept . '</t></is></c>';
+                                        $middle .= '<c r="A' . $rowIdx . '" s="10" t="inlineStr"><is><t>' . $concept . '</t></is></c>';
                                         $middle .= '<c r="B' . $rowIdx . '" s="5" t="inlineStr"><is><t>' . $transport . '</t></is></c>';
                                         $middle .= '<c r="C' . $rowIdx . '" s="4" t="inlineStr"><is><t>' . $date . '</t></is></c>';
-                                        $middle .= '<c r="D' . $rowIdx . '" s="9"><v>' . $amount . '</v></c>';
+                                        $middle .= '<c r="D' . $rowIdx . '" s="16"><v>' . $amount . '</v></c>';
                                     } else {
                                         // Empty rows with template styles to preserve borders
-                                        $middle .= '<c r="A' . $rowIdx . '" s="11"/>';
+                                        $middle .= '<c r="A' . $rowIdx . '" s="10"/>';
                                         $middle .= '<c r="B' . $rowIdx . '" s="5"/>';
                                         $middle .= '<c r="C' . $rowIdx . '" s="4"/>';
-                                        $middle .= '<c r="D' . $rowIdx . '" s="9"/>';
+                                        $middle .= '<c r="D' . $rowIdx . '" s="16"/>';
                                     }
                                     $middle .= '</row>';
                                 }
