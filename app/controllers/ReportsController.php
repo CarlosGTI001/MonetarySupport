@@ -253,6 +253,79 @@ class ReportsController extends Controller
         require_once __DIR__ . '/../core/libs/SimpleXLSXGen.php';
         
         if ($type === 'gastos_laborales_pendientes') {
+            $templatePath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ReporteGastosLaborales.xlsx';
+            
+            $zipProcessed = false;
+            $tempFile = '';
+            
+            if (file_exists($templatePath) && class_exists('\ZipArchive')) {
+                $tempFile = tempnam(sys_get_temp_dir(), 'rep_') . '.xlsx';
+                if (copy($templatePath, $tempFile)) {
+                    $zip = new \ZipArchive();
+                    if ($zip->open($tempFile) === true) {
+                        $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
+                        if ($xml !== false) {
+                            $row7Pos = strpos($xml, '<row r="7"');
+                            $sheetDataEndPos = strpos($xml, '</sheetData>');
+                            
+                            if ($row7Pos !== false && $sheetDataEndPos !== false) {
+                                $before = substr($xml, 0, $row7Pos);
+                                $after = substr($xml, $sheetDataEndPos);
+                                
+                                $middle = '';
+                                $rowIdx = 7;
+                                foreach ($data['rows'] as $row) {
+                                    $concept = htmlspecialchars((string)$row[0], ENT_QUOTES, 'UTF-8');
+                                    $transport = htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8');
+                                    $date = htmlspecialchars((string)$row[2], ENT_QUOTES, 'UTF-8');
+                                    $amount = (float)$row[3];
+                                    
+                                    $middle .= '<row r="' . $rowIdx . '" spans="1:5" x14ac:dyDescent="0.3">';
+                                    $middle .= '<c r="A' . $rowIdx . '" s="11" t="inlineStr"><is><t>' . $concept . '</t></is></c>';
+                                    $middle .= '<c r="B' . $rowIdx . '" s="5" t="inlineStr"><is><t>' . $transport . '</t></is></c>';
+                                    $middle .= '<c r="C' . $rowIdx . '" s="4" t="inlineStr"><is><t>' . $date . '</t></is></c>';
+                                    $middle .= '<c r="D' . $rowIdx . '" s="9"><v>' . $amount . '</v></c>';
+                                    $middle .= '</row>';
+                                    
+                                    $rowIdx++;
+                                }
+                                
+                                // Total Row
+                                $middle .= '<row r="' . $rowIdx . '" spans="1:5" ht="23.4" x14ac:dyDescent="0.3">';
+                                $middle .= '<c r="A' . $rowIdx . '" s="10"/>';
+                                $middle .= '<c r="B' . $rowIdx . '" s="8"/>';
+                                $middle .= '<c r="C' . $rowIdx . '" s="6" t="inlineStr"><is><t>Total</t></is></c>';
+                                $middle .= '<c r="D' . $rowIdx . '" s="7"><f>SUM(D7:D' . ($rowIdx - 1) . ')</f></c>';
+                                $middle .= '<c r="E' . $rowIdx . '" s="1"/>';
+                                $middle .= '</row>';
+                                
+                                $newXml = $before . $middle . $after;
+                                $newXml = preg_replace('/<dimension ref="A1:E\d+"\/>/', '<dimension ref="A1:E' . $rowIdx . '"/>', $newXml);
+                                
+                                $zip->deleteName('xl/worksheets/sheet1.xml');
+                                $zip->addFromString('xl/worksheets/sheet1.xml', $newXml);
+                                $zipProcessed = true;
+                            }
+                        }
+                        $zip->close();
+                    }
+                }
+            }
+
+            if ($zipProcessed && file_exists($tempFile) && filesize($tempFile) > 0) {
+                header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                header('Content-Disposition: attachment; filename="ReporteGastosLaborales_Pendientes_' . date('Ymd_His') . '.xlsx"');
+                header('Content-Length: ' . filesize($tempFile));
+                readfile($tempFile);
+                @unlink($tempFile);
+                exit;
+            }
+
+            if ($tempFile && file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+
+            // Fallback dynamics
             $xlsxData = [];
             
             // Merged title block rows (A1:D5)
