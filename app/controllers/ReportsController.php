@@ -17,7 +17,7 @@ class ReportsController extends Controller
     {
         $type = $_GET['type'] ?? 'accounts';
         $format = $_GET['format'] ?? 'html';
-        $data = $this->getReportData($type);
+        $data = $this->getReportData($type, $format);
 
         if ($format === 'excel') {
             $this->exportExcel($type, $data);
@@ -104,7 +104,7 @@ class ReportsController extends Controller
         return utf8_decode($str);
     }
 
-    private function getReportData(string $type): array
+    private function getReportData(string $type, string $format = 'html'): array
     {
         $db = Database::getConnection();
         $title = '';
@@ -173,6 +173,26 @@ class ReportsController extends Controller
                 }
                 break;
 
+            case 'gastos_laborales_pendientes':
+                $title = 'Gastos Laborales Pendientes';
+                $headers = ['Concepto', 'Transporte', 'Fecha', 'Monto'];
+                $data = $db->query('
+                    SELECT w.concept, w.project, w.date, w.amount
+                    FROM work_expenses w
+                    WHERE w.reimbursed = 0
+                    ORDER BY w.date ASC, w.id ASC
+                ')->fetchAll();
+                foreach ($data as $r) {
+                    $amountVal = (float)$r['amount'];
+                    $rows[] = [
+                        $r['concept'],
+                        $r['project'],
+                        $r['date'],
+                        ($format === 'excel') ? $amountVal : format_money($amountVal, 'DOP')
+                    ];
+                }
+                break;
+
             case 'gastos_fijos':
                 $title = 'Gastos Fijos';
                 $headers = ['Nombre', 'Monto', 'Frecuencia', 'Cuenta', 'Estado'];
@@ -232,6 +252,60 @@ class ReportsController extends Controller
     {
         require_once __DIR__ . '/../core/libs/SimpleXLSXGen.php';
         
+        if ($type === 'gastos_laborales_pendientes') {
+            $xlsxData = [];
+            
+            // Merged title block rows (A1:D5)
+            $xlsxData[] = ["<style center>Gastos Extras no estipulados por facturas, Corredor, Moto Concho y Metro de Santo Domingo, para transportes a Bancas y otros sucesos.</style>", "", "", ""];
+            $xlsxData[] = ["", "", "", ""];
+            $xlsxData[] = ["", "", "", ""];
+            $xlsxData[] = ["", "", "", ""];
+            $xlsxData[] = ["", "", "", ""];
+            
+            // Header Row (Row 6)
+            $xlsxData[] = [
+                "<style center>Concepto</style>", 
+                "<style center>Transporte</style>", 
+                "<style center>Fecha</style>", 
+                "<style center>Monto</style>"
+            ];
+            
+            // Data Rows (Row 7+)
+            $N = count($data['rows']);
+            foreach ($data['rows'] as $row) {
+                $amount = $row[3];
+                $xlsxData[] = [
+                    "<style center>" . (string)$row[0] . "</style>",
+                    "<style center>" . (string)$row[1] . "</style>",
+                    "<style center>" . (string)$row[2] . "</style>",
+                    "<style center>" . (is_numeric($amount) ? (float)$amount : $amount) . "</style>"
+                ];
+            }
+            
+            // Total Row (Row 7+N)
+            $totalRowIdx = 7 + $N;
+            $xlsxData[] = [
+                "", 
+                "", 
+                "<style bold center>Total</style>",
+                "<style bold center>=SUM(D7:D" . ($totalRowIdx - 1) . ")</style>"
+            ];
+            
+            $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($xlsxData);
+            
+            // Merge A1:D5
+            $xlsx->mergeCells("A1:D5");
+            
+            // Explicit widths from the template
+            $xlsx->setColWidth(0, 40); // Col A (Concepto)
+            $xlsx->setColWidth(1, 26); // Col B (Transporte)
+            $xlsx->setColWidth(2, 12); // Col C (Fecha)
+            $xlsx->setColWidth(3, 17); // Col D (Monto)
+            
+            $xlsx->downloadAs($type . '_' . date('Ymd_His') . '.xlsx');
+            exit;
+        }
+
         $colCount = count($data['headers']);
         $lastCol = \Shuchkin\SimpleXLSXGen::coord2cell($colCount - 1);
         

@@ -582,6 +582,12 @@ class SimpleXLSXGen
                     }
                 }
 
+                if (is_string($v) && strpos($v, '=') === 0) {
+                    $formula = substr($v, 1);
+                    $row .= '<c r="' . $cname . '"' . ($cs !== null ? ' s="' . $cs . '"' : '') . '><f>' . self::esc($formula) . '</f></c>';
+                    continue;
+                }
+
                 if (is_numeric($v)) {
                     $cv = $v;
                 } else {

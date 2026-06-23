@@ -3,9 +3,14 @@
         <h3 class="fw-bold mb-1">Gastos Laborales</h3>
         <p class="text-muted mb-0 small">Seguimiento de gastos reembolsables y proyectos de trabajo.</p>
     </div>
-    <a class="btn btn-primary fw-bold px-4 rounded-pill d-flex align-items-center shadow-sm" href="?module=work_expenses&action=create">
-        <i class="bi bi-plus-lg me-2"></i> Nuevo Gasto Laboral
-    </a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success fw-bold px-4 rounded-pill d-flex align-items-center shadow-sm" href="?module=reports&action=view&type=gastos_laborales_pendientes&format=excel">
+            <i class="bi bi-file-earmark-excel me-2"></i> Exportar Pendientes
+        </a>
+        <a class="btn btn-primary fw-bold px-4 rounded-pill d-flex align-items-center shadow-sm" href="?module=work_expenses&action=create">
+            <i class="bi bi-plus-lg me-2"></i> Nuevo Gasto Laboral
+        </a>
+    </div>
 </div>
 
 <div class="row g-4 mb-5">
