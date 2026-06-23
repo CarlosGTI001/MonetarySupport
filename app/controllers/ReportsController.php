@@ -266,41 +266,39 @@ class ReportsController extends Controller
                         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
                         if ($xml !== false) {
                             $row7Pos = strpos($xml, '<row r="7"');
-                            $sheetDataEndPos = strpos($xml, '</sheetData>');
+                            $row22Pos = strpos($xml, '<row r="22"');
                             
-                            if ($row7Pos !== false && $sheetDataEndPos !== false) {
+                            if ($row7Pos !== false && $row22Pos !== false) {
                                 $before = substr($xml, 0, $row7Pos);
-                                $after = substr($xml, $sheetDataEndPos);
+                                $after = substr($xml, $row22Pos);
                                 
                                 $middle = '';
-                                $rowIdx = 7;
-                                foreach ($data['rows'] as $row) {
-                                    $concept = htmlspecialchars((string)$row[0], ENT_QUOTES, 'UTF-8');
-                                    $transport = htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8');
-                                    $date = htmlspecialchars((string)$row[2], ENT_QUOTES, 'UTF-8');
-                                    $amount = (float)$row[3];
-                                    
+                                for ($i = 0; $i < 15; $i++) {
+                                    $rowIdx = 7 + $i;
                                     $middle .= '<row r="' . $rowIdx . '" spans="1:5" x14ac:dyDescent="0.3">';
-                                    $middle .= '<c r="A' . $rowIdx . '" s="11" t="inlineStr"><is><t>' . $concept . '</t></is></c>';
-                                    $middle .= '<c r="B' . $rowIdx . '" s="5" t="inlineStr"><is><t>' . $transport . '</t></is></c>';
-                                    $middle .= '<c r="C' . $rowIdx . '" s="4" t="inlineStr"><is><t>' . $date . '</t></is></c>';
-                                    $middle .= '<c r="D' . $rowIdx . '" s="9"><v>' . $amount . '</v></c>';
-                                    $middle .= '</row>';
                                     
-                                    $rowIdx++;
+                                    if (isset($data['rows'][$i])) {
+                                        $row = $data['rows'][$i];
+                                        $concept = htmlspecialchars((string)$row[0], ENT_QUOTES, 'UTF-8');
+                                        $transport = htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8');
+                                        $date = htmlspecialchars((string)$row[2], ENT_QUOTES, 'UTF-8');
+                                        $amount = (float)$row[3];
+                                        
+                                        $middle .= '<c r="A' . $rowIdx . '" s="11" t="inlineStr"><is><t>' . $concept . '</t></is></c>';
+                                        $middle .= '<c r="B' . $rowIdx . '" s="5" t="inlineStr"><is><t>' . $transport . '</t></is></c>';
+                                        $middle .= '<c r="C' . $rowIdx . '" s="4" t="inlineStr"><is><t>' . $date . '</t></is></c>';
+                                        $middle .= '<c r="D' . $rowIdx . '" s="9"><v>' . $amount . '</v></c>';
+                                    } else {
+                                        // Empty rows with template styles to preserve borders
+                                        $middle .= '<c r="A' . $rowIdx . '" s="11"/>';
+                                        $middle .= '<c r="B' . $rowIdx . '" s="5"/>';
+                                        $middle .= '<c r="C' . $rowIdx . '" s="4"/>';
+                                        $middle .= '<c r="D' . $rowIdx . '" s="9"/>';
+                                    }
+                                    $middle .= '</row>';
                                 }
                                 
-                                // Total Row
-                                $middle .= '<row r="' . $rowIdx . '" spans="1:5" ht="23.4" x14ac:dyDescent="0.3">';
-                                $middle .= '<c r="A' . $rowIdx . '" s="10"/>';
-                                $middle .= '<c r="B' . $rowIdx . '" s="8"/>';
-                                $middle .= '<c r="C' . $rowIdx . '" s="6" t="inlineStr"><is><t>Total</t></is></c>';
-                                $middle .= '<c r="D' . $rowIdx . '" s="7"><f>SUM(D7:D' . ($rowIdx - 1) . ')</f></c>';
-                                $middle .= '<c r="E' . $rowIdx . '" s="1"/>';
-                                $middle .= '</row>';
-                                
                                 $newXml = $before . $middle . $after;
-                                $newXml = preg_replace('/<dimension ref="A1:E\d+"\/>/', '<dimension ref="A1:E' . $rowIdx . '"/>', $newXml);
                                 
                                 $zip->deleteName('xl/worksheets/sheet1.xml');
                                 $zip->addFromString('xl/worksheets/sheet1.xml', $newXml);
