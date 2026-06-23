@@ -266,14 +266,14 @@ class ReportsController extends Controller
                         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
                         if ($xml !== false) {
                             $row7Pos = strpos($xml, '<row r="7"');
-                            $row22Pos = strpos($xml, '<row r="22"');
+                            $row34Pos = strpos($xml, '<row r="34"');
                             
-                            if ($row7Pos !== false && $row22Pos !== false) {
+                            if ($row7Pos !== false && $row34Pos !== false) {
                                 $before = substr($xml, 0, $row7Pos);
-                                $after = substr($xml, $row22Pos);
+                                $after = substr($xml, $row34Pos);
                                 
                                 $middle = '';
-                                for ($i = 0; $i < 15; $i++) {
+                                for ($i = 0; $i < 27; $i++) {
                                     $rowIdx = 7 + $i;
                                     $middle .= '<row r="' . $rowIdx . '" spans="1:5" x14ac:dyDescent="0.3">';
                                     
